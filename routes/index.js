@@ -19,7 +19,7 @@ router.get('/', function (req, res, next) {
   });
 });
 
-// 用户信息添加
+// 添加用户
 router.post('/user/add', (req, res) => {
   // 读取请求参数
   const {
@@ -47,6 +47,7 @@ router.post('/user/add', (req, res) => {
   }).then(user => {
     res.send({
       status: 200,
+      msg: "添加用户成功.",
       data: user
     })
   }).catch(error => {
@@ -58,14 +59,14 @@ router.post('/user/add', (req, res) => {
   })
 })
 
-// 用户删除，这里得是管理员才可以删除
+// 用户删除，这里得是用户登录了，并且是管理员才可以删除
 router.post('/user/delete', (req, res) => {
   const {
-    userId
+    id
   } = req.body
   UserModel.destroy({
     where: {
-      id: userId
+      id
     }
   }).then(user => {
     if (user) {
