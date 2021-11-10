@@ -16,121 +16,202 @@ npm install
 运行项目,启动项目之后
 
 ```shell
-npm start
+npm run dev
+```
+
+## 所用技术栈
+
+Express +  mysql2 + nodemon + sequelize + http-errors
+
+nodemon  ==》 node 项目热启动
+
+全局安装该命令
+
+```shell
+npm install nodemon -g
+```
+
+项目依赖安装
+
+```shell
+npm install nodemon
+```
+
+package.json目录下添加配置，启动nodemon
+
+```json
+ "scripts": {
+    "start": "node ./bin/www",
+    "dev": "nodemon ./bin/www"
+  },
 ```
 
 使用浏览器打开，或者使用postman接口测试工具进行连接测试
 
-## 1、登录请求
-
-### 请求URL地址
+## 返回状态码统一规定
 
 ```shell
-http://localhost:5000/login
+status  |状态表示的意思
+200 ==》 操作成功
+201 ==》 操作异常
+500 ==》 服务器异常
 ```
 
-### 请求方式
+## 接口文档请求地址
+
+### 集成ApiDoc接口文档
+
+#### 安装
+
+通过注释，统一集成接口请求文档，首先下载apidoc依赖，先全局安装,这样就可以使用apidoc命令了，[apidoc官网](https://apidocjs.com/)
 
 ```shell
-POST
+npm install apidoc -g
 ```
 
-### 请求参数
+在Node.js项目中引入依赖
 
 ```shell
-|参数		|是否必选      |类型      |说明
-|user_name    |Y        |string    |用户名
-|password     |Y        |string    |密码
+npm install apidoc
 ```
 
-### 返回示例：
+apidoc提供了很多的注释样例，它几乎支持目前主流的所有风格的注释。例如：Javadoc风格注释(可以在C#, Go, Dart, Java, JavaScript, PHP, TypeScript等语言中使用)
+
+```
+/**
+ * This is a comment.
+ */
+```
+
+#### 配置使用
+
+在本次开发项目中，为了开发便捷，避免大量的编写接口文档，方便开发。
+
+##### 方法一
+
+在项目根目录创建一个apidoc.json配置项，这里可以做简单的配置。
 
 ```json
 {
-    "state": 200,
-    "msg": "登录成功.",
-    "data": {
-        "id": "123",
-        "user_name": "py",
-        "sex": "男",
-        "password": "123456",
-        "roles": "role_admin",
-        "create_time": "2021-11-09T00:00:00.000Z",
-        "update_time": "2021-11-09T00:00:00.000Z"
-    }
+    "name": "项目后端接口文档",
+    "title": "项目后端接口文档",
+    "description": "毕设接口文档",
+    "version": "1.0.0",
+    "url": "http://localhost:5000"
 }
 ```
 
-## 2、添加用户
+##### 方法二
 
-### 请求URL地址
+如果你的项目中使用了`package.json`文件(例如:node.js工程)，那么你可以将`apidoc.json`文件中的所有配置信息放到`package.json`文件中的*apidoc*参数中：
 
-```shell
-http://localhost:5000/user/add
+```json
+ "apidoc": {
+    "name": "项目后端接口文档",
+    "title": "项目后端接口文档",
+    "description": "毕设接口文档",
+    "version": "1.0.0",
+    "url": "http://localhost:5000"
+  }
 ```
 
-### 请求方式
+具体配置项以及参数说明可以查看上方提供的官网地址。
 
-```shell
-POST
-```
+#### 在项目中使用
 
-### 请求参数
-
-```shell
-|参数		|是否必选      |类型      |说明
-|id    |Y        |string    |学号
-|user_name    |Y        |string    |用户名
-|password     |Y        |string    |密码
-|sex    |Y        |string    |性别
-|roles     |Y        |string    |角色
-```
-
-### 返回示例：
+这里就举一个添加用户的例子，这是添加用户的接口例子
 
 ```js
-{
-    "status": 200,
-    "msg": "添加用户成功.",
-    "data": {
-        "create_time": 1636462924117,
-        "update_time": 1636462924117,
-        "id": "04",
-        "user_name": "1py",
-        "sex": "男",
-        "password": "123456",
-        "roles": "admin"
+/**
+ * @api {post} /user/add 添加用户
+ * @apiDescription 添加用户
+ * @apiName 添加用户
+ * @apiGroup User
+ * @apiBody  {String} id 学号
+ * @apiBody  {String} user_name 姓名
+ * @apiBody  {String} sex 性别
+ * @apiBody  {String} password 密码
+ * @apiBody  {String} roles 角色
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "添加用户成功.",
+ *      "data": user
+ *  }
+ * @apiSampleRequest http://localhost:5000/user/add
+ * @apiVersion 1.0.0
+ */
+router.post('/user/add', (req, res) => {
+  // 读取请求参数
+  const {
+    id,
+    user_name,
+    sex,
+    password,
+    roles
+  } = req.body
+  // 根据id查询用户是否存在
+  UserModel.findOne({
+    where: {
+      id
     }
-}
+  }).then(user => {
+    // 如果用户id存在，返回错误信息,提示用户存在
+    if (user) {
+      res.send({
+        status: 201,
+        msg: '此用户已经存在.'
+      })
+      console.info('用户信息', user)
+    } else {
+      // 保存用户
+      return UserModel.create({
+        ...req.body
+      })
+    }
+  }).then(user => {
+    res.send({
+      status: 200,
+      msg: "添加用户成功.",
+      data: user
+    })
+  }).catch(error => {
+    console.error('注册异常', error)
+    res.send({
+      status: 201,
+      msg: '添加用户异常, 请重新尝试'
+    })
+  })
+})
 ```
 
-## 3、删除用户
-
-### 请求URL地址
+接下来就是生成接口文档，执行命令，这里简单介绍一下命令参数的含义，
 
 ```shell
-http://localhost:5000/user/delete
+apidoc -i routes/ -o public/apidoc
+参数    含义
+-i      指定读取源文件的目录，例如：apidoc -i routes/ 意为读取routes/目录下面的源文件，默认值:./
+-o      指定输出文档的目录，例如：apidoc -o public/apidoc 意为输出文档到public/apidoc目录下，默认值:./doc/
 ```
 
-### 请求方式
+如图所示就可以查看到生成的文档在哪一个目录下了
 
-```shell
-POST
+![接口文档生成](H:\AwebKF\毕业设计\项目\node_serve\public\images\接口文档生成地址.png)
+
+接下来就是打开接口文档了，在浏览器输入
+
+```json
+http://localhost:5000/apidoc/index.html
 ```
 
-### 请求参数
+如图所示
 
-```shell
-|参数		|是否必选      |类型      |说明
-|id    |Y        |string    |学号
-```
+![接口文档-添加用户](H:\AwebKF\毕业设计\项目\node_serve\public\images\添加用户.png)
 
-### 返回示例：
+到此基本就完成了，不过如果你访问不到，那么需要放行你的静态文件夹了，比如这样，在app.js中这样编写。
 
 ```js
-{
-    "status": 200,
-    "msg": "删除用户成功."
-}
+app.use(express.static(path.join(__dirname, 'public')));
 ```
 
