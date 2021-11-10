@@ -27,6 +27,8 @@ nodemon  ==》 node 项目热启动
 
 全局安装该命令
 
+![](H:\AwebKF\毕业设计\项目\node_serve\public\images\nodemon.png)
+
 ```shell
 npm install nodemon -g
 ```
@@ -44,6 +46,12 @@ package.json目录下添加配置，启动nodemon
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www"
   },
+```
+
+使用命令启动项目，就可以做到项目热启动了，更改代码之后会刷新。
+
+```shell
+npm run dev
 ```
 
 使用浏览器打开，或者使用postman接口测试工具进行连接测试
@@ -214,4 +222,252 @@ http://localhost:5000/apidoc/index.html
 ```js
 app.use(express.static(path.join(__dirname, 'public')));
 ```
+
+## NodeJs + multer+ node-xlsx实现excel导入mysql
+
+### 项目说明
+
+本次项目需要批量导入数据到数据库，导出数据库生成excel，话不多说，这里就介绍怎么使用excel模板导入数据到数据库
+
+### 项目安装插件
+
+安装node-xlsx插件，这是一款支持的excel文件类有.xlsx .xls .xlsm .xltx .xltm .xlsb .xlam等插件，基本满足需求 [插件的github地址](https://github.com/mgcrea/node-xlsx) 
+
+```shell
+npm install node-xlsx --save
+```
+
+安装multer，multer是一个node.js中间件，用于处理 `multipart/form-data`类型的表单数据，主要用于上传文件，在form表单上要加上 enctype=“multipart/form-data” 的属性。Multer 不会处理任何非 multipart/form-data 类型的表单数据。不要将 Multer 作为全局中间件使用，因为恶意用户可以上传文件到一个你没有预料到的路由，应该只在你需要处理上传文件的路由上使用。
+
+```shell
+npm install --save multer
+```
+
+### 目录结构说明
+
+![](H:\AwebKF\毕业设计\项目\node_serve\public\images\项目模板.png)
+
+#### UserMode模块
+
+这里其实就是sequelize实例化mysql，不用直接操作mysql，完成映射关系
+
+```js
+// 用户模块
+const {
+    DataTypes
+} = require("sequelize");
+
+// 导入数据库连接方法,实例化Sequelize
+const sequelizedb = require('../config/db')
+
+// 返回一个用户模型架构
+const UserModel = sequelizedb.define('tb_user', {
+    // 在这里定义模型属性
+    // id
+    id: {
+        type: DataTypes.STRING,
+        // 主键
+        primaryKey: true,
+        // 约束不为空
+        allowNull: false
+    },
+    // 用户名
+    user_name: {
+        type: DataTypes.STRING
+    },
+    // 性别
+    sex: {
+        type: DataTypes.STRING
+    },
+    // 密码
+    password: {
+        type: DataTypes.STRING
+    },
+    // 角色,默认为普通用户，role_normal，role_admin为管理员
+    roles: {
+        type: DataTypes.STRING,
+        defaultValue: 'role_normal'
+    },
+    // 创建时间
+    create_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    },
+    // 更新时间
+    update_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    }
+}, {
+
+});
+
+// 向外暴露UserModel
+module.exports = UserModel;
+```
+
+#### excel.js路由文件
+
+这里基本上代码都注释了，不用过多说明
+
+```js
+// 处理excel导入,导出
+const express = require('express');
+
+const path = require('path')
+const fs = require('fs')
+
+const xlsx = require("node-xlsx");
+
+const multer = require('multer')
+
+const router = express.Router();
+
+// 处理excel文件
+const upload = multer({
+    dest: "../public/upload"
+});
+
+// 定义全局数组
+const excelHead = [
+    "id",
+    "user_name",
+    "sex",
+    "password",
+    "roles"
+];
+
+// 导入暴露的模型
+const UserModel = require('../models/UserModel')
+
+const excelUtils = require('../utils/excelUtils')
+
+/**
+ * 1. 点击下载excel模板，生成blob流给前端
+ * 2. excel模板输入信息后导入，解析数据(先存到服务器，服务器改名后node-xlsx读取，添加到数据库)存入数据库，存入成功给前端状态，前端重新调用init
+ * 3. 前端批量导出，传递过来ids，我们利用ids查询，然后生成数据，blob流返回给前端
+ */
+router.get("/export", (req, res) => {
+    const excelData = [{
+        name: "用户模板.xlsx", // 给第一个sheet指名字
+        data: [
+            [
+                "学号",
+                "姓名",
+                "性别",
+                "密码",
+                "类型"
+            ],
+        ],
+    }, ];
+    const optionArr = {
+        "!cols": [{
+                wch: 10
+            },
+            {
+                wch: 10
+            },
+            {
+                wch: 10
+            },
+            {
+                wch: 10
+            },
+            {
+                wch: 10
+            }
+        ],
+    };
+    res.send(xlsx.build(excelData, optionArr));
+});
+
+// excel导入文件,得先存下才能获取到具体内容
+router.post('/upload', upload.single('file'), (req, res, next) => {
+    try {
+        // 重命名文件夹
+        fs.rename(
+            req.file.path,
+            req.file.destination + "/" + "用户模板.xlsx",
+            (err) => {
+                if (err) {
+                    console.log(err);
+                }
+            }
+        )
+        // 解析模板,返回对象形式的键值对
+        const excelObj = xlsx.parse("../public/upload/用户模板.xlsx")
+        console.log(`excelObj`, excelObj[0].data)
+        const dataArr = excelObj[0].data;
+        // 判断是不是使用的指定模板导入的
+        if (excelObj[0].data[0].toString() === "学号,姓名,性别,密码,类型") {
+            // 删除二位数组第一项，也就是表头数据
+            dataArr.shift()
+            // 遍历
+            dataArr.map((item) => {
+                const addData = {}
+                excelHead.map((key, index) => {
+                    addData[key] = item[index] ? item[index] : ''
+                })
+                console.log(`addData`, addData)
+                // 使用模板插入数据
+                UserModel.create(
+                    addData
+                ).then(user => {
+                    if (user) {
+                        return res.send({
+                            status: 200,
+                            msg: '成功导入excel到数据库.'
+                        })
+                    }
+                }).catch(err => {
+                    res.send({
+                        status: 201,
+                        msg: '模板匹配错误，请检查关键字.'
+                    })
+                    next(err)
+                })
+            })
+        } else {
+            // 不是的话,返回给前端错误状态
+            return res.send({
+                status: 201,
+                msg: '模板匹配错误，请检查关键字.'
+            })
+        }
+    } catch (error) {
+        console.error('导入异常.', error)
+        res.send({
+            status: 201,
+            msg: '导入异常, 请重新尝试'
+        })
+    }
+
+})
+
+module.exports = router;
+```
+
+#### app.js配置路由
+
+这里只是省略的代码
+
+```js
+const express = require('express');
+...
+// 引入模板文件
+const excelRouter = require('./routes/excel');
+// 接口的配置
+app.use('/excel', excelRouter);
+...
+```
+
+### excel模板导入数据到mysql接口请求
+
+```shell
+http://localhost:5000/excel/upload
+```
+
+模拟请求
+
+![](H:\AwebKF\毕业设计\项目\node_serve\public\images\excel导入mysql.png)
 
