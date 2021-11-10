@@ -1,13 +1,45 @@
 const express = require('express');
 const router = express.Router();
 
-// 导入数据库连接方法,实例化Sequelize
-const sequemysql = require('../config/db.js')
+const path = require('path')
+const fs = require('fs')
+
+const multer = require('multer')
+
+const dirPath = path.join(__dirname, '..', 'public/excel')
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdir(dirPath, function (err) {
+        if (err) {
+          console.log(`err`, err)
+        } else {
+          cb(null, dirPath)
+        }
+      })
+    } else {
+      cb(null, dirPath)
+    }
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname)
+    cb(null, file.fieldname + '-' + Date.now() + ext)
+  }
+})
+
+const upload = multer({
+  storage
+})
+
+const uploadFile = upload.single('file')
 
 // 导入暴露的模型
 const UserModel = require('../models/UserModel')
 
 const jwtUtils = require('../utils/jwtUtils')
+
+const excelUtils = require('../utils/excelUtils')
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -225,11 +257,89 @@ router.get('/user/logout', (req, res) => {
   }
 })
 
+
 // 用户批量导入，通过excel
+// router.post('/user/upload/excel', (req, res, next) => {
+//   uploadFile(req, res, function (err) {
+//     if (err) {
+//       return res.send({
+//         status: 201,
+//         msg: '上传文件失败'
+//       })
+//     } else {
+//       const fileName = req.file.filename
+//       const splitFileName = fileName.split('.');
+//       // 支持的excel文件类有.xlsx .xls .xlsm .xltx .xltm .xlsb .xlam等
+//       const ExcelType = splitFileName[splitFileName.length - 1];
+//       if (ExcelType != 'xlsx' && ExcelType != 'xls' && ExcelType != 'xlsm' && ExcelType != 'xltx' && ExcelType != 'xltm' && ExcelType != 'xlsb' && ExcelType != 'xlam') {
+//         res.status(201).json({
+//           status: 201,
+//           msg: '文件类型错误,请上传Excel文件!',
+//           data: {},
+//         });
+//         return;
+//       }
+//       // 获取上传文件的位置
+//       const filel = fs.readFile('../public/excel/1.xlsx', (err, data) => {
+//         if (err) {
+//           console.error(err)
+//           return
+//         }
+//         console.log(data)
+//       })
+//       const excel_Dir = filel;
+//       const CityArray = new Array('id', 'user_name', 'sex', 'password', 'roles');
+//       const importConfig = {
+//         excel_Dir,
+//         CityArray,
+//       }
+//       try {
+//         excelUtils.parseExcel(importConfig).then(user => {
+//           if (user) {
+//             console.log(`user`, user)
+//             excelUtils.createExcel(user).then(excelData => {
+//               if (excelData) {
+//                 res.send({
+//                   status: 200,
+//                   msg: 'excel导入数据库成功'
+//                 })
+//               }
+//             })
+//             // 删除文件
+//             excelUtils.deleteExcel(importConfig).then(delExcel => {
+//               if (delExcel) {
+//                 res.send({
+//                   status: 201,
+//                   msg: 'excel文件删除'
+//                 })
+//               }
+//               return
+//             })
+//           }
+//         })
+//       } catch (error) {
+//         console.error('退出异常.', error)
+//         // 删除文件
+//         excelUtils.deleteExcel(importConfig).then(delExcel => {
+//           if (delExcel) {
+//             res.send({
+//               status: 201,
+//               msg: 'excel文件删除'
+//             })
+//           }
+//           return
+//         })
+//         res.send({
+//           status: 201,
+//           msg: '退出异常, 请重新尝试.'
+//         })
+//         next(error);
+//       }
+//     }
 
+//   })
+// })
 
-
-
-
+// require('./excel.js')(router)
 
 module.exports = router;
