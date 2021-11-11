@@ -19,9 +19,9 @@ const upload = multer({
 const excelHead = [
     "id",
     "user_name",
-    "sex",
     "password",
-    "roles"
+    "roles",
+    "state"
 ];
 
 // 导入暴露的模型
@@ -34,6 +34,21 @@ const excelUtils = require('../utils/excelUtils')
  * 2. excel模板输入信息后导入，解析数据(先存到服务器，服务器改名后node-xlsx读取，添加到数据库)存入数据库，存入成功给前端状态，前端重新调用init
  * 3. 前端批量导出，传递过来ids，我们利用ids查询，然后生成数据，blob流返回给前端
  */
+/**
+ * @api {get} /excel/export excel模板生成
+ * @apiDescription excel模板生成
+ * @apiName excel模板生成
+ * @apiGroup Excel
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "模板生成成功.",
+ *      "data":  xlsx.build(excelData, optionArr)
+ *  }
+ * @apiSampleRequest http://localhost:5000/excel/export
+ * @apiVersion 1.0.0
+ */
 router.get("/export", (req, res) => {
     const excelData = [{
         name: "用户模板.xlsx", // 给第一个sheet指名字
@@ -41,9 +56,9 @@ router.get("/export", (req, res) => {
             [
                 "学号",
                 "姓名",
-                "性别",
                 "密码",
-                "类型"
+                "角色",
+                "状态"
             ],
         ],
     }, ];
@@ -68,11 +83,27 @@ router.get("/export", (req, res) => {
     res.send(xlsx.build(excelData, optionArr));
 });
 
-// excel导入文件,得先存下才能获取到具体内容
+// excel导入数据到用户表,
+/**
+ * @api {post} /excel/upload excel导入数据到用户表
+ * @apiDescription excel导入数据到用户表
+ * @apiName excel导入数据到用户表
+ * @apiGroup Excel
+ * @apiBody {File} file excel文件
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "成功导入excel到数据库.",
+ *  }
+ * @apiSampleRequest http://localhost:5000/excel/upload
+ * @apiVersion 1.0.0
+ */
 router.post('/upload', upload.single('file'), (req, res, next) => {
     try {
         // 重命名文件夹
         fs.rename(
+            // 上传文件路径，这里可以修改，后期上线改为服务器的路径
             req.file.path,
             req.file.destination + "/" + "用户模板.xlsx",
             (err) => {
@@ -86,7 +117,7 @@ router.post('/upload', upload.single('file'), (req, res, next) => {
         console.log(`excelObj`, excelObj[0].data)
         const dataArr = excelObj[0].data;
         // 判断是不是使用的指定模板导入的
-        if (excelObj[0].data[0].toString() === "学号,姓名,性别,密码,类型") {
+        if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态") {
             // 删除二位数组第一项，也就是表头数据
             dataArr.shift()
             // 遍历
