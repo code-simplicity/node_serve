@@ -1,4 +1,9 @@
+
+
+[TOC]
+
 # node_serve	毕设项目后端接口文档说明
+
 ## 启动方法
 
 首先拉取代码
@@ -222,6 +227,8 @@ http://localhost:5000/apidoc/index.html
 ```js
 app.use(express.static(path.join(__dirname, 'public')));
 ```
+
+------
 
 ## NodeJs + multer+ node-xlsx实现excel导入mysql
 
@@ -471,3 +478,14 @@ http://localhost:5000/excel/upload
 
 ![](H:\AwebKF\毕业设计\项目\node_serve\public\images\excel导入mysql.png)
 
+首先使用excel模板添加一些数据
+
+![excel模板](H:\AwebKF\毕业设计\项目\node_serve\public\images\excel模板.png)
+
+然后接口请求
+
+![](H:\AwebKF\毕业设计\项目\node_serve\public\images\excel导入数据库接口请求.png)
+
+接下来我们查看数据库是否有数据，如果数据插入成功，那么怎么我们这个就可以了。到此我们的excel模板导入数据库就成功了。
+
+![](H:\AwebKF\毕业设计\项目\node_serve\public\images\数据库用户数据.png)
