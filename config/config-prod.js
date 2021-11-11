@@ -1,5 +1,4 @@
 // 开发者环境
-
 const configProd = {
     database: 'design-project', // 使用哪个数据库
     username: 'root', // 用户名
