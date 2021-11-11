@@ -24,11 +24,508 @@ npm install
 npm run dev
 ```
 
-## 所用技术栈
 
-Express +  mysql2 + nodemon + sequelize + http-errors
 
-nodemon  ==》 node 项目热启动
+------
+
+## 开发环境
+
+IED：VSCode，Navicat。
+
+编程语言： Node.js， mysql2，Vue.js等
+
+数据库：Mysql
+
+技术栈：Express +  mysql2 + nodemon + sequelize + http-errors等
+
+## 功能说明
+
+### 门户
+
+
+
+### 管理中心
+
+
+
+### 数据库设计
+
+1. 用户表-tb_user
+   - id-学号
+   - user_name-姓名
+   - password-密码
+   - roles-角色
+   - state-状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+2. 图片表-tb_image
+   - id-图片id
+   - url-图片路径
+   - path-存储路径
+   - type-图片类型
+   - name-图片名称
+   - state-图片状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+3. 视频表-tb_video
+   - id-视频id
+   - url-视频路径
+   - path-视频存储路径
+   - type-视频类型
+   - name-图片名称
+   - state-视频状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+4. 内容表tb_content
+   - id-id
+   - content-内容
+   - state-内容状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+
+创建数据库
+
+```sql
+CREATE DATABASE IF NOT EXISTS `design-project` CHAR SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+创建用户表
+
+```mysql
+CREATE TABLE `tb_user`  (
+  `id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '学号',
+  `user_name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '姓名',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
+  `roles` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色,admin和user，管理员和普通用户',
+  `state` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '状态，0表示删除，1表示正常',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `update_time` datetime NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+```
+
+创建图片表
+
+```mysql
+CREATE TABLE `tb_image`  (
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片id',
+  `url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片路径',
+  `path` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片存储路径',
+  `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片类型',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片名称',
+  `state` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '状态，0表示删除，1表示正常',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `update_time` datetime NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+```
+
+创建视频表
+
+```mysql
+CREATE TABLE `tb_video`  (
+  `id` int(11) NOT NULL COMMENT '视频id',
+  `url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '视频路径',
+  `path` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '视频存储路径',
+  `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '视频类型',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '视频名称',
+  `state` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '状态，0表示删除，1表示正常',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `update_time` datetime NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+```
+
+创建内容表
+
+```sql
+CREATE TABLE `tb_content`  (
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '内容id',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '内容',
+  `state` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '状态，0表示删除，1表示正常',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `update_time` datetime NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+```
+
+### 连接数据库
+
+添加Sequelize 操作数据库
+
+#### 安装
+
+Sequelize 的使用可以通过 [npm](https://www.npmjs.com/package/sequelize) (或 [yarn](https://yarnpkg.com/package/sequelize)).
+
+```sh
+npm install --save sequelize
+```
+
+数据库安装驱动程
+
+```sh
+npm install --save mysql2
+```
+
+#### 配置环境
+
+建立config-dev.js和config-prod.js环境
+
+config-dev.js
+
+```js
+// 开发者环境
+const configDev = {
+    database: 'design-project', // 使用哪个数据库
+    username: 'root', // 用户名
+    password: '123456', // 口令
+    host: 'localhost', // 主机名
+    port: 3306 // 端口号，MySQL默认3306
+};
+
+// 暴露配置
+module.exports = configDev;
+```
+
+config-prod.js
+
+```js
+// 开发者环境
+const configProd = {
+    database: 'design-project', // 使用哪个数据库
+    username: 'root', // 用户名
+    password: '123456', // 口令
+    host: 'localhost', // 主机名
+    port: 3306 // 端口号，MySQL默认3306
+};
+
+// 暴露配置
+module.exports = configProd;
+```
+
+环境选择
+
+```js
+// 实际的配置环境
+
+// 生产环境
+const configDev = './config-dev'
+
+// 上线环境
+const configProd = './config-prod'
+
+let config = ''
+// 判断环境
+if (process.env.NODE_ENV === 'development') {
+    config = require(configDev)
+} else {
+    config = require(configProd)
+}
+
+// 暴露
+module.exports = config;
+```
+
+#### 建立连接
+
+编写db.js
+
+```js
+const {
+    Sequelize
+} = require('sequelize');
+// 连接数据库
+const config = require('./config')
+
+// 配置数据库连接
+const sequelizedb = new Sequelize(config.database, config.username, config.password, {
+    host: config.host,
+    dialect: 'mysql',
+    // 连接池设置
+    pool: {
+        max: 5,
+        min: 0,
+        idle: 30000
+    },
+
+    // 自定义日志
+    logging: function (message) {
+        console.debug(message);
+    },
+    // 全局配置表名和Model名称一致,全局禁用时间戳
+    define: {
+        freezeTableName: true,
+        timestamps: false
+    }
+});
+
+// 测试连接数据库是否成功
+try {
+    sequelizedb.authenticate();
+    console.log('数据库连接成功');
+} catch (error) {
+    console.error('无法连接数据库，请检查重试:', error);
+};
+
+// 暴露配置
+module.exports = sequelizedb;
+```
+
+------
+
+### 生成Model模型实例
+
+#### UserModel模型实例
+
+```js
+// 用户模块
+const {
+    DataTypes
+} = require("sequelize");
+
+// 导入数据库连接方法,实例化Sequelize
+const sequelizedb = require('../config/db')
+
+// 返回一个用户模型架构
+const UserModel = sequelizedb.define('tb_user', {
+    // id
+    id: {
+        type: DataTypes.STRING(20),
+        // 主键
+        primaryKey: true,
+        // 约束不为空
+        allowNull: false
+    },
+    // 用户名
+    user_name: {
+        type: DataTypes.STRING(32),
+    },
+    // 密码
+    password: {
+        type: DataTypes.STRING,
+    },
+    // 角色,默认为普通用户，user，admin为管理员
+    roles: {
+        type: DataTypes.STRING,
+        defaultValue: 'user'
+    },
+    // 状态，0表示删除，1表示正常
+    state: {
+        type: DataTypes.STRING(1),
+        defaultValue: '1'
+    },
+    // 创建时间
+    create_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    },
+    // 更新时间
+    update_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    }
+}, {});
+
+// 模型同步
+UserModel.sync({
+    alter: true
+})
+
+// 向外暴露UserModel
+module.exports = UserModel;
+```
+
+#### ImageModel模型实例
+
+```js
+// 图片模块
+const {
+    DataTypes
+} = require("sequelize");
+
+// 导入数据库连接方法,实例化Sequelize
+const sequelizedb = require('../config/db')
+
+const ImageModel = sequelizedb.define('tb_image', {
+    // id
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        // 主键
+        primaryKey: true,
+        // 约束不为空
+        allowNull: false
+    },
+    // 图片路径
+    url: {
+        type: DataTypes.STRING(1024),
+    },
+    // 图片存储路径
+    path: {
+        type: DataTypes.STRING(1024),
+    },
+    // 图片类型,默认image/png
+    type: {
+        type: DataTypes.STRING,
+        defaultValue: 'image/png'
+    },
+    // 图片名称
+    name: {
+        type: DataTypes.STRING,
+    },
+    // 状态，0表示删除，1表示正常
+    state: {
+        type: DataTypes.STRING(1),
+        defaultValue: '1'
+    },
+    // 创建时间
+    create_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    },
+    // 更新时间
+    update_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    }
+
+}, {})
+
+// 模型同步
+ImageModel.sync({
+    alter: true
+})
+
+// 向外暴露UserModel
+module.exports = ImageModel;
+```
+
+#### VideoModel模型实例
+
+```js
+// 视频模块
+const {
+    DataTypes
+} = require("sequelize");
+
+// 导入数据库连接方法,实例化Sequelize
+const sequelizedb = require('../config/db')
+
+const VideoModel = sequelizedb.define('tb_video', {
+    // id
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        // 主键
+        primaryKey: true,
+        // 约束不为空
+        allowNull: false
+    },
+    // 视频路径
+    url: {
+        type: DataTypes.STRING(1024),
+    },
+    // 视频存储路径
+    path: {
+        type: DataTypes.STRING(1024),
+    },
+    // 视频类型,默认video/mp4
+    type: {
+        type: DataTypes.STRING,
+        defaultValue: 'video/mp4'
+    },
+    // 视频名称
+    name: {
+        type: DataTypes.STRING,
+    },
+    // 状态，0表示删除，1表示正常
+    state: {
+        type: DataTypes.STRING(1),
+        defaultValue: '1'
+    },
+    // 创建时间
+    create_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    },
+    // 更新时间
+    update_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    }
+
+}, {})
+
+// 模型同步
+VideoModel.sync({
+    alter: true
+})
+
+// 向外暴露UserModel
+module.exports = VideoModel;
+```
+
+#### ContentModel模型实例
+
+```js
+// 内容模型
+const {
+    DataTypes
+} = require("sequelize");
+
+// 导入数据库连接方法,实例化Sequelize
+const sequelizedb = require('../config/db')
+
+const ContentModel = sequelizedb.define('tb_content', {
+    // id
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        // 主键
+        primaryKey: true,
+        // 约束不为空
+        allowNull: false
+    },
+    // 内容
+    content: {
+        type: DataTypes.TEXT,
+    },
+    // 状态，0表示删除，1表示正常
+    state: {
+        type: DataTypes.STRING(1),
+        defaultValue: '1'
+    },
+    // 创建时间
+    create_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    },
+    // 更新时间
+    update_time: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now
+    }
+
+}, {})
+
+// 模型同步
+ContentModel.sync({
+    alter: true
+})
+
+// 向外暴露UserModel
+module.exports = ContentModel;
+```
+
+
+
+
+
+
+
+
+
+## Node 项目热启动
 
 全局安装该命令
 
