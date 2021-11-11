@@ -9,8 +9,7 @@ const cors = require("cors");
 const expressJWT = require('express-jwt');
 
 
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
+const userRouter = require('./routes/user');
 const excelRouter = require('./routes/excel');
 // 导入jwtUtils
 const jwtUtils = require('./utils/jwtUtils');
@@ -35,8 +34,7 @@ app.use(express.urlencoded({
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', userRouter);
 app.use('/excel', excelRouter);
 
 // catch 404 and forward to error handler
