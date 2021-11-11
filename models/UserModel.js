@@ -8,10 +8,9 @@ const sequelizedb = require('../config/db')
 
 // 返回一个用户模型架构
 const UserModel = sequelizedb.define('tb_user', {
-    // 在这里定义模型属性
     // id
     id: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(20),
         // 主键
         primaryKey: true,
         // 约束不为空
@@ -19,20 +18,21 @@ const UserModel = sequelizedb.define('tb_user', {
     },
     // 用户名
     user_name: {
-        type: DataTypes.STRING
-    },
-    // 性别
-    sex: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING(32),
     },
     // 密码
     password: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
     },
-    // 角色,默认为普通用户，role_normal，role_admin为管理员
+    // 角色,默认为普通用户，user，admin为管理员
     roles: {
         type: DataTypes.STRING,
-        defaultValue: 'role_normal'
+        defaultValue: 'user'
+    },
+    // 状态，0表示删除，1表示正常
+    state: {
+        type: DataTypes.STRING(1),
+        defaultValue: '1'
     },
     // 创建时间
     create_time: {
@@ -44,9 +44,12 @@ const UserModel = sequelizedb.define('tb_user', {
         type: DataTypes.DATEONLY,
         defaultValue: Date.now
     }
-}, {
+}, {});
 
-});
+// 模型同步
+UserModel.sync({
+    alter: true
+})
 
 // 向外暴露UserModel
 module.exports = UserModel;
