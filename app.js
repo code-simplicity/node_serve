@@ -11,6 +11,7 @@ const expressJWT = require('express-jwt');
 
 const userRouter = require('./routes/user');
 const excelRouter = require('./routes/excel');
+const imageRouter = require('./routes/image');
 // 导入jwtUtils
 const jwtUtils = require('./utils/jwtUtils');
 
@@ -36,6 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', userRouter);
 app.use('/excel', excelRouter);
+app.use('/image', imageRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {

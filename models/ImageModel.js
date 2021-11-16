@@ -1,6 +1,7 @@
 // 图片模块
 const {
-    DataTypes
+    DataTypes,
+    Sequelize
 } = require("sequelize");
 
 // 导入数据库连接方法,实例化Sequelize
@@ -9,8 +10,7 @@ const sequelizedb = require('../config/db')
 const ImageModel = sequelizedb.define('tb_image', {
     // id
     id: {
-        type: DataTypes.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: DataTypes.STRING(),
         // 主键
         primaryKey: true,
         // 约束不为空

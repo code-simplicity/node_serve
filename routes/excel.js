@@ -46,7 +46,7 @@ const excelUtils = require('../utils/excelUtils')
  *      "msg": "模板生成成功.",
  *      "data":  xlsx.build(excelData, optionArr)
  *  }
- * @apiSampleRequest http://localhost:5000/excel/export
+ * @apiSampleRequest http://localhost:5050/excel/export
  * @apiVersion 1.0.0
  */
 router.get("/export", (req, res) => {
@@ -96,7 +96,7 @@ router.get("/export", (req, res) => {
  *      "status" : "200",
  *      "msg": "成功导入excel到数据库.",
  *  }
- * @apiSampleRequest http://localhost:5000/excel/upload
+ * @apiSampleRequest http://localhost:5050/excel/upload
  * @apiVersion 1.0.0
  */
 router.post('/upload', upload.single('file'), (req, res, next) => {

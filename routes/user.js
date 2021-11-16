@@ -35,7 +35,7 @@ router.get('/', function (req, res, next) {
  *      "msg": "添加用户成功.",
  *      "data": user
  *  }
- * @apiSampleRequest http://localhost:5000/user/add
+ * @apiSampleRequest http://localhost:5050/user/add
  * @apiVersion 1.0.0
  */
 router.post('/user/add', (req, res) => {
@@ -92,7 +92,7 @@ router.post('/user/add', (req, res) => {
  *      "status" : "200",
  *      "msg": "删除用户成功.",
  *  }
- * @apiSampleRequest http://localhost:5000/user/delete
+ * @apiSampleRequest http://localhost:5050/user/delete
  * @apiVersion 1.0.0
  */
 router.post('/user/delete', (req, res) => {
@@ -133,7 +133,7 @@ router.post('/user/delete', (req, res) => {
  *      "data": data,
  *      "token": token
  *  }
- * @apiSampleRequest http://localhost:5000/user/login
+ * @apiSampleRequest http://localhost:5050/user/login
  * @apiVersion 1.0.0
  */
 router.post('/user/login', async (req, res, next) => {
@@ -205,7 +205,7 @@ router.post('/user/login', async (req, res, next) => {
  *      "status" : "200",
  *      "msg": "退出登录成功.",
  *  }
- * @apiSampleRequest http://localhost:5000/user/logout
+ * @apiSampleRequest http://localhost:5050/user/logout
  * @apiVersion 1.0.0
  */
 router.get('/user/logout', (req, res) => {
@@ -238,7 +238,7 @@ router.get('/user/logout', (req, res) => {
  *      "msg": "查询用户列表成功.",
  *      "data": user
  *  }
- * @apiSampleRequest http://localhost:5000/user/list
+ * @apiSampleRequest http://localhost:5050/user/list
  * @apiVersion 1.0.0
  */
 router.get('/user/list', (req, res) => {
@@ -270,7 +270,7 @@ router.get('/user/list', (req, res) => {
  *      "msg": "查询用户成功.",
  *      "data": user,
  *  }
- * @apiSampleRequest http://localhost:5000/user/list/search
+ * @apiSampleRequest http://localhost:5050/user/list/search
  * @apiVersion 1.0.0
  */
 router.get('/user/list/search', (req, res) => {
@@ -326,7 +326,7 @@ router.get('/user/list/search', (req, res) => {
  *      "msg": "更新用户信息成功.",
  *      "data": user,
  *  }
- * @apiSampleRequest http://localhost:5000/user/update
+ * @apiSampleRequest http://localhost:5050/user/update
  * @apiVersion 1.0.0
  */
 router.post('/user/update', (req, res) => {

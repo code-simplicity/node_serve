@@ -1,6 +1,6 @@
 // 开发者环境
 const configDev = {
-    database: 'design-project', // 使用哪个数据库
+    database: 'design_project', // 使用哪个数据库
     username: 'root', // 用户名
     password: '123456', // 口令
     host: 'localhost', // 主机名

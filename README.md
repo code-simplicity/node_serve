@@ -64,6 +64,9 @@ IED：VSCode，Navicat。
    - path-存储路径
    - type-图片类型
    - name-图片名称
+   - name_1 图片第一个名称
+   - name_2 图片第二个名称
+   - name_3 图片第三个名称
    - state-图片状态（0表示删除，1表示正常）
    - create_time-创建时间
    - update_time-更新时间
@@ -607,7 +610,7 @@ apidoc提供了很多的注释样例，它几乎支持目前主流的所有风�
     "title": "项目后端接口文档",
     "description": "毕设接口文档",
     "version": "1.0.0",
-    "url": "http://localhost:5000"
+    "url": "http://localhost:5050"
 }
 ```
 
@@ -621,7 +624,7 @@ apidoc提供了很多的注释样例，它几乎支持目前主流的所有风�
     "title": "项目后端接口文档",
     "description": "毕设接口文档",
     "version": "1.0.0",
-    "url": "http://localhost:5000"
+    "url": "http://localhost:5050"
   }
 ```
 
@@ -649,7 +652,7 @@ apidoc提供了很多的注释样例，它几乎支持目前主流的所有风�
  *      "msg": "添加用户成功.",
  *      "data": user
  *  }
- * @apiSampleRequest http://localhost:5000/user/add
+ * @apiSampleRequest http://localhost:5050/user/add
  * @apiVersion 1.0.0
  */
 router.post('/user/add', (req, res) => {
@@ -712,7 +715,7 @@ apidoc -i routes/ -o public/apidoc
 接下来就是打开接口文档了，在浏览器输入
 
 ```json
-http://localhost:5000/apidoc/index.html
+http://localhost:5050/apidoc/index.html
 ```
 
 如图所示
@@ -968,7 +971,7 @@ app.use('/excel', excelRouter);
 ### excel模板导入数据到mysql接口请求
 
 ```shell
-http://localhost:5000/excel/upload
+http://localhost:5050/excel/upload
 ```
 
 模拟请求

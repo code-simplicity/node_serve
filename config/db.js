@@ -30,7 +30,7 @@ const sequelizedb = new Sequelize(config.database, config.username, config.passw
 try {
     sequelizedb.authenticate();
     // 一次性同步使用模型
-    sequelize.sync();
+    sequelizedb.sync();
     console.log('数据库连接成功');
 } catch (error) {
     console.error('无法连接数据库，请检查重试:', error);
