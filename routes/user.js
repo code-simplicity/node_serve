@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  Op,
-  where
+  Op
 } = require("sequelize");
 
 const path = require('path')

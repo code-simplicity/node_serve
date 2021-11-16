@@ -13,6 +13,7 @@ const userRouter = require('./routes/user');
 const excelRouter = require('./routes/excel');
 const imageRouter = require('./routes/image');
 const videoRouter = require('./routes/video');
+const contentRouter = require('./routes/content');
 // 导入jwtUtils
 const jwtUtils = require('./utils/jwtUtils');
 
@@ -48,6 +49,7 @@ app.use('/', userRouter);
 app.use('/excel', excelRouter);
 app.use('/image', imageRouter);
 app.use('/video', videoRouter);
+app.use('/content', contentRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {

@@ -10,8 +10,7 @@ const sequelizedb = require('../config/db')
 const ContentModel = sequelizedb.define('tb_content', {
     // id
     id: {
-        type: DataTypes.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: DataTypes.STRING(),
         // 主键
         primaryKey: true,
         // 约束不为空
