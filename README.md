@@ -56,6 +56,7 @@ IED：VSCode，Navicat。
    - password-密码
    - roles-角色
    - state-状态（0表示删除，1表示正常）
+   - score-得分
    - create_time-创建时间
    - update_time-更新时间
 2. 图片表-tb_image
@@ -64,10 +65,10 @@ IED：VSCode，Navicat。
    - path-存储路径
    - type-图片类型
    - name-图片名称
-   - name_1 图片第一个名称
-   - name_2 图片第二个名称
-   - name_3 图片第三个名称
    - state-图片状态（0表示删除，1表示正常）
+   - water_level-水位
+   - wave_direction-波浪方向
+   - embank_ment-堤坝布置位置
    - create_time-创建时间
    - update_time-更新时间
 3. 视频表-tb_video
@@ -75,8 +76,11 @@ IED：VSCode，Navicat。
    - url-视频路径
    - path-视频存储路径
    - type-视频类型
-   - name-图片名称
+   - name-视频名称
    - state-视频状态（0表示删除，1表示正常）
+   - water_level-水位
+   - wave_direction-波浪方向
+   - embank_ment-堤坝布置位置
    - create_time-创建时间
    - update_time-更新时间
 4. 内容表tb_content
@@ -989,3 +993,16 @@ http://localhost:5050/excel/upload
 接下来我们查看数据库是否有数据，如果数据插入成功，那么怎么我们这个就可以了。到此我们的excel模板导入数据库就成功了。
 
 ![](H:\AwebKF\毕业设计\项目\node_serve\public\images\数据库用户数据.png)
+
+------
+
+## Node.js集成日志记录模块
+
+### 安装
+
+首先安装winston，配置应用的日志，并具有可定制化的特性
+
+```sh
+npm install winston
+```
+

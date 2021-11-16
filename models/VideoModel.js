@@ -9,8 +9,7 @@ const sequelizedb = require('../config/db')
 const VideoModel = sequelizedb.define('tb_video', {
     // id
     id: {
-        type: DataTypes.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: DataTypes.STRING(),
         // 主键
         primaryKey: true,
         // 约束不为空
@@ -38,6 +37,18 @@ const VideoModel = sequelizedb.define('tb_video', {
         type: DataTypes.STRING(1),
         defaultValue: '1'
     },
+    // 水位
+    water_level: {
+        type: DataTypes.STRING(1024),
+    },
+    // 波浪来向
+    wave_direction: {
+        type: DataTypes.STRING(1024),
+    },
+    // 堤坝位置
+    embank_ment: {
+        type: DataTypes.STRING(1024),
+    },
     // 创建时间
     create_time: {
         type: DataTypes.DATEONLY,
@@ -48,7 +59,6 @@ const VideoModel = sequelizedb.define('tb_video', {
         type: DataTypes.DATEONLY,
         defaultValue: Date.now
     }
-
 }, {})
 
 // 模型同步

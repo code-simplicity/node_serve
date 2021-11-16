@@ -1,7 +1,6 @@
 // 图片模块
 const {
     DataTypes,
-    Sequelize
 } = require("sequelize");
 
 // 导入数据库连接方法,实例化Sequelize
@@ -37,6 +36,18 @@ const ImageModel = sequelizedb.define('tb_image', {
     state: {
         type: DataTypes.STRING(1),
         defaultValue: '1'
+    },
+    // 水位
+    water_level: {
+        type: DataTypes.STRING(1024),
+    },
+    // 波浪来向
+    wave_direction: {
+        type: DataTypes.STRING(1024),
+    },
+    // 堤坝位置
+    embank_ment: {
+        type: DataTypes.STRING(1024),
     },
     // 创建时间
     create_time: {

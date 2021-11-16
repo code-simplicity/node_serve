@@ -62,6 +62,9 @@ const upload = multer({
  * @apiName 上传图片到服务器
  * @apiGroup Image
  * @apiBody {File} image 图片
+ * @apiBody {String} water_level 水位
+ * @apiBody {String} wave_direction 波浪方向
+ * @apiBody {String} embank_ment 堤坝布置位置
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
  *  {
@@ -73,7 +76,11 @@ const upload = multer({
  * @apiVersion 1.0.0
  */
 router.post('/upload', upload.single('image'), (req, res) => {
-
+    const {
+        water_level,
+        wave_direction,
+        embank_ment
+    } = req.body
     // 判断是否有文件
     const file = req.file
     console.log(`file`, file)
@@ -105,6 +112,9 @@ router.post('/upload', upload.single('image'), (req, res) => {
         path: '/ImagesUpload/' + file.originalname,
         type: fileTyppe,
         name: `${file.originalname}`,
+        water_level: water_level,
+        wave_direction: wave_direction,
+        embank_ment: embank_ment
     }).then(img => {
         res.send({
             status: 200,
@@ -134,13 +144,16 @@ function getType(contentType, name) {
     return type
 }
 
-// 图片请求，通过请求参数(水位高低，波浪来向，外堤布置三个参数获取到图片)
+// 图片请求，通过请求参数(名称，水位高低，波浪来向，外堤布置三个参数获取到图片)
 /**
- * @api {get} /image/find 搜索图片
+ * @api {post} /image/find 搜索图片
  * @apiDescription 搜索图片
  * @apiName 搜索图片
  * @apiGroup Image
- * @apiParam {String} name 名字
+ * @apiBody {String} name 图片名称
+ * @apiBody {String} water_level 水位高低
+ * @apiBody {String} wave_direction 波浪方向
+ * @apiBody {String} embank_ment 外堤布置
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
  *  {
@@ -151,16 +164,29 @@ function getType(contentType, name) {
  * @apiSampleRequest http://localhost:5050/image/find
  * @apiVersion 1.0.0
  */
-router.get('/find', (req, res) => {
-    // 通过图片名查询
+router.post('/search', (req, res) => {
+    // 通过图片名称，水位，波浪来向，堤坝布置查询图片
     const {
-        name
-    } = req.query
-    ImageModel.findAll({
+        name,
+        water_level,
+        wave_direction,
+        embank_ment
+    } = req.body
+    ImageModel.findOne({
         where: {
-            name: {
-                [Op.like]: `%${name}%`
-            }
+            [Op.and]: [{
+                    name: name
+                },
+                {
+                    water_level: water_level
+                },
+                {
+                    wave_direction: wave_direction
+                },
+                {
+                    embank_ment: embank_ment
+                }
+            ]
         }
     }).then(img => {
         res.send({

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const {
-  Op
+  Op,
+  where
 } = require("sequelize");
 
 const path = require('path')
@@ -123,7 +124,7 @@ router.post('/user/delete', (req, res) => {
  * @apiDescription 用户登录
  * @apiName 用户登录
  * @apiGroup User
- * @apiBody {String} user_name 姓名
+ * @apiBody {String} id 学号
  * @apiBody {String} password 密码
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
@@ -139,12 +140,12 @@ router.post('/user/delete', (req, res) => {
 router.post('/user/login', async (req, res, next) => {
   try {
     const {
-      user_name,
+      id,
       password
     } = req.body
     const user = await UserModel.findOne({
       where: {
-        user_name,
+        id,
         password
       }
     })
@@ -319,6 +320,7 @@ router.get('/user/list/search', (req, res) => {
  * @apiBody  {String} password="123456" 密码
  * @apiBody  {String} roles="user" 角色
  * @apiBody  {String} state="1" 状态
+ * @apiBody  {String} score="0" 得分
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
  *  {
@@ -339,13 +341,41 @@ router.post('/user/update', (req, res) => {
     res.send({
       status: 200,
       msg: '更新用户信息成功.',
-      data: user
+      data: data
     })
   }).catch(error => {
     console.error('更新用户信息失败.', error)
     res.send({
       status: 400,
       msg: '更新用户信息失败, 请重新尝试.',
+    })
+  })
+})
+
+// 查询当前用户，并且修改得分
+router.post('/user/update/score', (req, res) => {
+  const {
+    id,
+    score
+  } = req.body
+  UserModel.update({
+    score: score
+  }, {
+    where: {
+      id: id
+    }
+  }).then(user => {
+    res.send({
+      status: 200,
+      msg: '得分添加成功.',
+      data: user
+    })
+  }).catch(error => {
+    console.error('得分添加失败.', error)
+    res.send({
+      status: 200,
+      msg: '得分添加失败，请检查重试！',
+      data: user
     })
   })
 })

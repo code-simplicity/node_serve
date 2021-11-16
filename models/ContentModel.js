@@ -1,5 +1,6 @@
 // 内容模型
 const {
+    Sequelize,
     DataTypes
 } = require("sequelize");
 

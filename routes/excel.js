@@ -21,7 +21,8 @@ const excelHead = [
     "user_name",
     "password",
     "roles",
-    "state"
+    "state",
+    "score"
 ];
 
 // 导入暴露的模型
@@ -58,12 +59,16 @@ router.get("/export", (req, res) => {
                 "姓名",
                 "密码",
                 "角色",
-                "状态"
+                "状态",
+                "得分"
             ],
         ],
     }, ];
     const optionArr = {
         "!cols": [{
+                wch: 10
+            },
+            {
                 wch: 10
             },
             {
@@ -117,7 +122,7 @@ router.post('/upload', upload.single('file'), (req, res, next) => {
         console.log(`excelObj`, excelObj[0].data)
         const dataArr = excelObj[0].data;
         // 判断是不是使用的指定模板导入的
-        if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态") {
+        if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态,得分") {
             // 删除二位数组第一项，也就是表头数据
             dataArr.shift()
             // 遍历
@@ -128,9 +133,9 @@ router.post('/upload', upload.single('file'), (req, res, next) => {
                 })
                 console.log(`addData`, addData)
                 // 使用模板插入数据
-                UserModel.create(
+                UserModel.bulkCreate([
                     addData
-                ).then(user => {
+                ]).then(user => {
                     if (user) {
                         return res.send({
                             status: 200,

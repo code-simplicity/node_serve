@@ -34,6 +34,11 @@ const UserModel = sequelizedb.define('tb_user', {
         type: DataTypes.STRING(1),
         defaultValue: '1'
     },
+    // 得分
+    score: {
+        type: DataTypes.STRING(5),
+        defaultValue: 0
+    },
     // 创建时间
     create_time: {
         type: DataTypes.DATEONLY,
