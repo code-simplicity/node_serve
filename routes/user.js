@@ -157,7 +157,7 @@ router.post('/user/login', async (req, res, next) => {
       })
       // 响应数据中不要携带password，避免被攻击
       const data = {
-        user_name,
+        user_name: user.user_name,
         id: user.id,
       }
       // 如果用户类型为管理员，就可以登录管理中心

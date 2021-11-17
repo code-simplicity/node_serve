@@ -146,7 +146,7 @@ function getType(contentType, name) {
 
 // 图片请求，通过请求参数(名称，水位高低，波浪来向，外堤布置三个参数获取到图片)
 /**
- * @api {post} /image/find 搜索图片
+ * @api {post} /image/search 搜索图片
  * @apiDescription 搜索图片
  * @apiName 搜索图片
  * @apiGroup Image
@@ -161,7 +161,7 @@ function getType(contentType, name) {
  *      "msg": "查询图片成功.",
  *      "data": img
  *  }
- * @apiSampleRequest http://localhost:5050/image/find
+ * @apiSampleRequest http://localhost:5050/image/search
  * @apiVersion 1.0.0
  */
 router.post('/search', (req, res) => {
@@ -244,7 +244,47 @@ router.get('/find/image', (req, res) => {
             msg: '参数不完整.',
         });
     }
+})
 
+
+/**
+ * @api {get} /image/search/one搜索图片
+ * @apiDescription 图片请求
+ * @apiName 图片请求
+ * @apiGroup Image
+ * @apiBody {String} name 图片名称
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询图片成功.",
+ *      "data": img
+ *  }
+ * @apiSampleRequest http://localhost:5050/image/search/one
+ * @apiVersion 1.0.0
+ */
+router.get('/search/one', (req, res) => {
+    // 通过图片名称，水位，波浪来向，堤坝布置查询图片
+    const {
+        name,
+    } = req.query
+    ImageModel.findOne({
+        where: {
+            name: name
+        }
+    }).then(img => {
+        res.send({
+            status: 200,
+            msg: '查询图片成功.',
+            data: img
+        })
+    }).catch(error => {
+        console.error('查询图片失败.', error)
+        res.send({
+            status: 400,
+            msg: '查询图片失败.'
+        })
+    })
 })
 
 module.exports = router;
