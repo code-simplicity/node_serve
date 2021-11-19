@@ -11,13 +11,14 @@ const fs = require('fs')
 // 导入暴露的模型
 const ChooseModel = require('../models/ChooseModel')
 
-// 添加内容
+// 添加选择数据
 router.post('/add', (req, res) => {
     const {
-        content
+        content,
+        category
     } = req.body
     ChooseModel.create({
-        id: `${Date.now()}`,
+        category: category,
         content: content
     }).then(content => {
         res.send({
@@ -94,6 +95,34 @@ router.get('/search', (req, res) => {
         where: {
             id
         }
+    }).then(content => {
+        res.send({
+            status: 200,
+            msg: '查询内容成功.',
+            data: content
+        })
+    }).catch(error => {
+        console.error('查询内容失败.', error)
+        res.send({
+            status: 400,
+            msg: '查询内容失败，请重试！'
+        })
+    })
+})
+
+// 根据分类获取分类内容
+router.get('/findlist', (req, res) => {
+    // const {
+    //     category
+    // } = req.query
+    ChooseModel.findAll({
+        // where: {
+        //     category
+        // },
+        order: [
+            ['create_time']
+        ]
+        // 将按最大年龄进行升序排序
     }).then(content => {
         res.send({
             status: 200,

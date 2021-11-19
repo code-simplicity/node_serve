@@ -60,13 +60,13 @@ const VideoModel = sequelizedb.define('tb_video', {
     },
     // 创建时间
     create_time: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.DATE,
         defaultValue: Date.now,
         comment: '创建时间'
     },
     // 更新时间
     update_time: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.DATE,
         defaultValue: Date.now,
         comment: '更新时间'
     }

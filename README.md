@@ -91,8 +91,8 @@ IED：VSCode，Navicat。
    - update_time-更新时间
 5. 选择表-tb_choose
    - id-id
-   - parent_content
-   - child_content
+   - content-选择内容
+   - state-内容状态（0表示删除，1表示正常）
    - create_time-创建时间
    - update_time-更新时间
 
