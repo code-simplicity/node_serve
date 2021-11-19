@@ -14,26 +14,31 @@ const ContentModel = sequelizedb.define('tb_content', {
         // 主键
         primaryKey: true,
         // 约束不为空
-        allowNull: false
+        allowNull: false,
+        comment: 'id'
     },
     // 内容
     content: {
         type: DataTypes.TEXT,
+        comment: '内容'
     },
     // 状态，0表示删除，1表示正常
     state: {
         type: DataTypes.STRING(1),
-        defaultValue: '1'
+        defaultValue: '1',
+        comment: '状态，0表示删除，1表示正常'
     },
     // 创建时间
     create_time: {
         type: DataTypes.DATEONLY,
-        defaultValue: Date.now
+        defaultValue: Date.now,
+        comment: '创建时间'
     },
     // 更新时间
     update_time: {
         type: DataTypes.DATEONLY,
-        defaultValue: Date.now
+        defaultValue: Date.now,
+        comment: '更新时间'
     }
 
 }, {})

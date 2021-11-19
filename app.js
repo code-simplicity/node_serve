@@ -14,6 +14,7 @@ const excelRouter = require('./routes/excel');
 const imageRouter = require('./routes/image');
 const videoRouter = require('./routes/video');
 const contentRouter = require('./routes/content');
+const chooseRouter = require('./routes/choose');
 // 导入jwtUtils
 const jwtUtils = require('./utils/jwtUtils');
 
@@ -27,14 +28,29 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 // 处理跨域
-app.use(cors({
-  maxAge: 5,
-  credentials: true, // 发送cookie
-  origin: 'http://localhost:8080',
-  allowMethods: ['GET', 'POST', 'DELETE'],
-  allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  exposeHeaders: ['WWW-Authenticate', 'Server-Authorization']
-}))
+// app.use(cors());
+// app.all('*', function (req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header('Access-Control-Allow-Headers', "*");
+//   res.header("Access-Control-Allow-Methods", "*");
+//   res.header("Access-Control-Allow-Credentials", true);
+//   next();
+// });
+
+// 处理跨域
+app.use((req, res, next) => {
+  //判断路径
+  if (req.path !== '/' && !req.path.includes('.')) {
+    res.set({
+      'Access-Control-Allow-Credentials': true, //允许后端发送cookie
+      'Access-Control-Allow-Origin': req.headers.origin || '*', //任意域名都可以访问,或者基于我请求头里面的域
+      'Access-Control-Allow-Headers': 'X-Requested-With,Content-Type', //设置请求头格式和类型
+      'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS', //允许支持的请求方式
+      'Content-Type': 'application/json; charset=utf-8' //默认与允许的文本格式json和编码格式
+    })
+  }
+  req.method === 'OPTIONS' ? res.status(204).end() : next()
+})
 
 
 app.use(logger('dev'));
@@ -50,6 +66,7 @@ app.use('/excel', excelRouter);
 app.use('/image', imageRouter);
 app.use('/video', videoRouter);
 app.use('/content', contentRouter);
+app.use('/choose', chooseRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {
@@ -92,7 +109,7 @@ app.use(function (err, req, res, next) {
   // 判断token是否存在
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
-      status: 201,
+      status: 301,
       msg: 'token验证失败，请重新登录.'
     })
     return
@@ -106,7 +123,6 @@ app.use(function (err, req, res, next) {
     // 直接退出，避免多次请求
     return
   }
-
 });
 
 module.exports = app;
