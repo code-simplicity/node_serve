@@ -59,7 +59,7 @@ IED：VSCode，Navicat。
    - score-得分
    - create_time-创建时间
    - update_time-更新时间
-2. 图片表-tb_image
+2. 图片表-tb_image---目前不需要这个总表了
    - id-图片id
    - url-图片路径
    - path-存储路径
@@ -84,17 +84,67 @@ IED：VSCode，Navicat。
    - create_time-创建时间
    - update_time-更新时间
 4. 内容表tb_content
-   - id-id
+   - id-内容id
+   - choose_id-选择表的id（外键）
    - content-内容
    - state-内容状态（0表示删除，1表示正常）
    - create_time-创建时间
    - update_time-更新时间
 5. 选择表-tb_choose
-   - id-id
+   - id-选择id
    - content-选择内容
+   - category-内容类别
    - state-内容状态（0表示删除，1表示正常）
    - create_time-创建时间
    - update_time-更新时间
+6. 波形图表-tb_wave_forms
+   - id-波形图表id
+   - point_id-点位表id(外键)
+   - url-图片路径
+   - path-存储路径
+   - type-图片类型
+   - name-图片名称
+   - state-图片状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+7. 波统计图表-tb_wave_stats
+   - id-波统计图表id
+   - point_id-点位表id(外键)
+   - url-图片路径
+   - path-存储路径
+   - type-图片类型
+   - name-图片名称
+   - state-图片状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+8. 港口地图表-tb_port_map
+   - id-港口地图表id
+   - url-图片路径
+   - path-存储路径
+   - type-图片类型
+   - name-图片名称
+   - state-图片状态（0表示删除，1表示正常）
+   - create_time-创建时间
+   - update_time-更新时间
+9. 港口点位地图表-tb_port_point_map
+   - id-港口点位地图表id
+   - url-图片路径
+   - path-存储路径
+   - type-图片类型
+   - name-图片名称
+   - state-图片状态（0表示删除，1表示正常）
+   - water_level-水位
+   - wave_direction-波浪方向
+   - embank_ment-堤坝布置位置
+   - create_time-创建时间
+   - update_time-更新时间
+10. 点位表-tb_point
+    - id-点位表id
+    - port_point_map_id-港口点位地图表id（外键）
+    - content-点位内容
+    - state-图片状态（0表示删除，1表示正常）
+    - create_time-创建时间
+    - update_time-更新时间
 
 创建数据库
 

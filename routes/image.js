@@ -18,20 +18,37 @@ const Constants = require('../utils/Constants')
 
 const Utils = require('../utils/utils');
 
+//获取时间
+function getNowFormatDate() {
+    const date = new Date();
+    const seperator = "-";
+    const month = date.getMonth() + 1;
+    const strDate = date.getDate();
+    if (month >= 1 && month <= 9) {
+        month = "0" + month;
+    }
+    if (strDate >= 0 && strDate <= 9) {
+        strDate = "0" + strDate;
+    }
+    const currentdate = date.getFullYear() + seperator + month + seperator + strDate;
+    return currentdate.toString();
+}
+
 // 文件上传到服务器的路径,存储在本地的
-const dirPath = path.join(__dirname, '..', 'public/ImagesUpload')
+const dirPath = path.join(__dirname, '..', '/public/UploadImages/' + getNowFormatDate())
+
+
 const publicUrl = path.join(__dirname, '..', 'public')
 
 // 存储在服务器上的,/root/docker/node_serve/ImageUpload/
 // const dirPath = path.join('/root/docker/node_serve/ImageUpload/')
 
-
 // 创建图片保存的路径,绝对路径
-// 配置规则 配置目录/类型/原名称.类型
+// 配置规则 配置目录/日期/原名称.类型
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         if (!fs.existsSync(dirPath)) {
-            fs.mkdir(dirPath, (err) => {
+            fs.mkdir(dirPath, function (err) {
                 if (err) {
                     console.log(err)
                 } else {
@@ -44,8 +61,6 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         console.log('filename()', file)
-        // const ext = path.extname(file.originalname)
-        // 返回原来的名称
         cb(null, file.originalname)
     }
 })
@@ -106,10 +121,8 @@ router.post('/upload', upload.single('image'), (req, res) => {
         return
     }
     ImageModel.create({
-        id: `${Date.now()}`,
         url: `${file.originalname}`,
-        // path: 'http://localhost:5050/ImagesUpload/' + file.originalname,
-        path: '/ImagesUpload/' + file.originalname,
+        path: '/UploadImages/' + getNowFormatDate() + '/' + file.originalname,
         type: fileTyppe,
         name: `${file.originalname}`,
         water_level: water_level,

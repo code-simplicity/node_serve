@@ -1,5 +1,6 @@
 // 视频模块
 const {
+    Sequelize,
     DataTypes
 } = require("sequelize");
 
@@ -9,7 +10,8 @@ const sequelizedb = require('../config/db')
 const VideoModel = sequelizedb.define('tb_video', {
     // id
     id: {
-        type: DataTypes.STRING(),
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4, // 或 Sequelize.UUIDV1
         // 主键
         primaryKey: true,
         // 约束不为空

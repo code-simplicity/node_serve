@@ -17,7 +17,6 @@ router.post('/add', (req, res) => {
         content
     } = req.body
     ContentModel.create({
-        id: `${Date.now()}`,
         content: content
     }).then(content => {
         res.send({

@@ -65,7 +65,6 @@ router.post('/upload', upload.single('video'), (req, res) => {
     // 获取文件类型是image/png还是其他
     const fileTyppe = file.mimetype
     VideoModel.create({
-        id: `${Date.now()}`,
         url: `${file.originalname}`,
         path: '/video/' + file.originalname,
         type: fileTyppe,
@@ -145,6 +144,30 @@ router.get('/delete', (req, res) => {
         res.send({
             status: 400,
             msg: '删除视频失败,请重试！'
+        })
+    })
+})
+
+router.get('/search/one', (req, res) => {
+    // 通过视频名称查看
+    const {
+        name,
+    } = req.query
+    VideoModel.findOne({
+        where: {
+            name: name
+        }
+    }).then(video => {
+        res.send({
+            status: 200,
+            msg: '查询视频成功.',
+            data: video
+        })
+    }).catch(error => {
+        console.error('查询视频失败.', error)
+        res.send({
+            status: 400,
+            msg: '查询视频失败.'
         })
     })
 })
