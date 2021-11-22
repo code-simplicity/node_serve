@@ -46,5 +46,31 @@ module.exports = {
         }
         const currentdate = date.getFullYear() + seperator + month + seperator + strDate;
         return currentdate.toString();
+    },
+
+    // 分页
+    pageFilter(arr, pageNum, pageSize) {
+        // 页数
+        pageNum = pageNum * 1
+        // 每页数量
+        pageSize = pageSize * 1
+        // 总数
+        const total = arr.length
+        // 页数
+        const pages = Math.floor((total + pageSize - 1) / pageSize)
+        const start = pageSize * (pageNum - 1)
+        const end = start + pageSize <= total ? start + pageSize : total
+        // 数据
+        const list = []
+        for (let i = start; i < end; i++) {
+            list.push(arr[i])
+        }
+        return {
+            pageNum,
+            total,
+            pages,
+            pageSize,
+            list
+        }
     }
 }

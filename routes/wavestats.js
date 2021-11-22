@@ -14,10 +14,10 @@ const multer = require('multer')
 const WaveStatsModel = require('../models/WaveStatsModel')
 
 
-const Utils = require('../utils/utils');
+const utils = require('../utils/utils');
 
 // 文件上传到服务器的路径,存储在本地的
-const dirPath = path.join(__dirname, '..', '/public/UploadImages/wave-stats/' + Utils.getNowFormatDate())
+const dirPath = path.join(__dirname, '..', '/public/UploadImages/wave-stats/' + utils.getNowFormatDate())
 
 // 配置规则 配置目录/日期/原名称.类型
 const storage = multer.diskStorage({
@@ -87,7 +87,7 @@ router.post('/upload', upload.single('image'), (req, res) => {
     // 去掉拓展名的一点
     const extNameOut = extName.substr(1)
     // 返回文件的类型
-    const type = Utils.getType(fileTyppe, extNameOut)
+    const type = utils.getType(fileTyppe, extNameOut)
     if (type === null) {
         res.send({
             status: 400,
@@ -98,7 +98,7 @@ router.post('/upload', upload.single('image'), (req, res) => {
     WaveStatsModel.create({
         point_id: point_id,
         url: file.originalname,
-        path: '/UploadImages/waveforms/' + Utils.getNowFormatDate() + '/' + file.originalname,
+        path: '/UploadImages/waveforms/' + utils.getNowFormatDate() + '/' + file.originalname,
         type: fileTyppe,
         name: file.originalname,
     }).then(result => {
@@ -233,7 +233,7 @@ router.get('/search/point_id', (req, res) => {
 })
 
 /**
- * @api {post} /wavestats/search/all  查询波形统计图
+ * @api {get} /wavestats/search/all  查询波形统计图
  * @apiDescription 查询波形统计图
  * @apiName 查询波形统计图
  * @apiGroup WaveStats
@@ -248,49 +248,28 @@ router.get('/search/point_id', (req, res) => {
  * @apiSampleRequest http://localhost:5050/wavestats/search/all
  * @apiVersion 1.0.0
  */
-router.post('/search/all', async (req, res) => {
+router.get('/search/all', async (req, res) => {
     const {
-        offset,
-        limit
+        pageNum,
+        pageSize
     } = req.query
-    const {
-        count,
-        rows
-    } = await WaveStatsModel.findAndCountAll({
+    await WaveStatsModel.findAll({
         order: [
             ['create_time', 'DESC']
         ],
-        offset: offset,
-        limit: limit
-    })
-    if (count) {
+    }).then(result => {
         res.send({
             status: 200,
             msg: '查询波形统计图成功.',
-            data: rows,
-            limit: count
+            data: utils.pageFilter(result, pageNum, pageSize),
         })
-    }
-
-    // WaveStatsModel.findAndCountAll({
-    //     order: [
-    //         ['create_time', 'DESC']
-    //     ],
-    //     offset: offset,
-    //     limit: limit
-    // }).then(result => {
-    //     res.send({
-    //         status: 200,
-    //         msg: '查询波形统计图成功.',
-    //         data: result
-    //     })
-    // }).catch(error => {
-    //     console.error('查询波形统计图失败.', error)
-    //     res.send({
-    //         status: 400,
-    //         msg: '查询波形统计图失败.'
-    //     })
-    // })
+    }).catch(error => {
+        console.error('查询波形统计图失败.', error)
+        res.send({
+            status: 400,
+            msg: '查询波形统计图失败.'
+        })
+    })
 })
 
 module.exports = router;
