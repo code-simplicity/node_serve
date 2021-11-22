@@ -10,7 +10,7 @@ const sequelizedb = require('../config/db')
 const PortPointMapModel = sequelizedb.define('tb_port_point_map', {
     id: {
         type: DataTypes.UUID,
-        defaultValue: Sequelize.UUIDV4, // 或 Sequelize.UUIDV1
+        defaultValue: Sequelize.UUIDV4,
         // 主键
         primaryKey: true,
         // 约束不为空

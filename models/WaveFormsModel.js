@@ -1,7 +1,8 @@
 // 波形图表-tb_wave_forms
 const {
     Sequelize,
-    DataTypes
+    DataTypes,
+    Deferrable
 } = require("sequelize");
 
 const PointModel = require('./PointModel')
@@ -18,10 +19,15 @@ const WaveFormsModel = sequelizedb.define('tb_wave_forms', {
         comment: 'id'
     },
     point_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        allowNull: false,
+        foreignKey: true,
         references: {
             model: PointModel,
             key: 'id',
+            onDelete: 'NO ACTION',
+            onUpdate: 'NO ACTION',
             deferrable: Deferrable.INITIALLY_IMMEDIATE
         },
         comment: '点位表id(外键)'
@@ -59,6 +65,8 @@ const WaveFormsModel = sequelizedb.define('tb_wave_forms', {
         comment: '更新时间'
     }
 }, {})
+
+
 
 // 模型同步
 WaveFormsModel.sync({

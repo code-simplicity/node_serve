@@ -1,14 +1,14 @@
 // 点位表-tb_point
 const {
     Sequelize,
-    DataTypes
+    DataTypes,
+    Deferrable
 } = require("sequelize");
 
 // 导入数据库连接方法,实例化Sequelize
 const sequelizedb = require('../config/db')
 
 const PortPointMapModel = require('./PortPointMapModel')
-
 
 const PointModel = sequelizedb.define('tb_point', {
     id: {
@@ -21,10 +21,15 @@ const PointModel = sequelizedb.define('tb_point', {
         comment: 'id'
     },
     port_point_map_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        allowNull: false,
+        foreignKey: true,
         references: {
             model: PortPointMapModel,
             key: 'id',
+            onDelete: 'NO ACTION',
+            onUpdate: 'NO ACTION',
             deferrable: Deferrable.INITIALLY_IMMEDIATE
         },
         comment: '港口点位地图表id（外键）'

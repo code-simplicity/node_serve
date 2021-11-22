@@ -15,6 +15,11 @@ const imageRouter = require('./routes/image');
 const videoRouter = require('./routes/video');
 const contentRouter = require('./routes/content');
 const chooseRouter = require('./routes/choose');
+const waveformsRouter = require('./routes/waveforms');
+const wavestatsRouter = require('./routes/wavestats');
+const portpointmapRouter = require('./routes/portpointmap');
+const pointRouter = require('./routes/point');
+const portmapRouter = require('./routes/portmap');
 // 导入jwtUtils
 const jwtUtils = require('./utils/jwtUtils');
 
@@ -67,6 +72,11 @@ app.use('/image', imageRouter);
 app.use('/video', videoRouter);
 app.use('/content', contentRouter);
 app.use('/choose', chooseRouter);
+app.use('/waveforms', waveformsRouter);
+app.use('/wavestats', wavestatsRouter);
+app.use('/portpointmap', portpointmapRouter);
+app.use('/point', pointRouter);
+app.use('/portmap', portmapRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {

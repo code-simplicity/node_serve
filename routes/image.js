@@ -141,7 +141,6 @@ router.post('/upload', upload.single('image'), (req, res) => {
             msg: '图片上传失败.'
         })
     })
-
 })
 
 // 判断图片类型是否是平时我们所支持的
