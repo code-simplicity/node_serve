@@ -21,7 +21,7 @@ const WaveStatsModel = sequelizedb.define('tb_wave_stats', {
     point_id: {
         type: DataTypes.UUID,
         defaultValue: Sequelize.UUIDV4,
-        allowNull: false,
+        allowNull: true,
         foreignKey: true,
         references: {
             model: PointModel,
@@ -65,10 +65,5 @@ const WaveStatsModel = sequelizedb.define('tb_wave_stats', {
         comment: '更新时间'
     }
 }, {})
-
-// 模型同步
-WaveStatsModel.sync({
-    alter: true
-})
 
 module.exports = WaveStatsModel;

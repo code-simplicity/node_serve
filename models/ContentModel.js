@@ -1,11 +1,14 @@
 // 内容模型
 const {
     Sequelize,
-    DataTypes
+    DataTypes,
+    Deferrable
 } = require("sequelize");
 
 // 导入数据库连接方法,实例化Sequelize
 const sequelizedb = require('../config/db')
+
+const ChooseModel = require('./ChooseModel')
 
 const ContentModel = sequelizedb.define('tb_content', {
     // id
@@ -16,26 +19,37 @@ const ContentModel = sequelizedb.define('tb_content', {
         primaryKey: true,
         // 约束不为空
         allowNull: false,
+        unique: true,
         comment: 'id'
     },
-    // 内容
+    choose_id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        allowNull: true,
+        foreignKey: true,
+        references: {
+            model: ChooseModel,
+            key: 'id',
+            onDelete: 'NOACTION',
+            onUpdate: 'NOACTION',
+            deferrable: Deferrable.INITIALLY_IMMEDIATE
+        },
+        comment: '选择列表id（外键）'
+    },
     content: {
         type: DataTypes.TEXT,
         comment: '内容'
     },
-    // 状态，0表示删除，1表示正常
     state: {
         type: DataTypes.STRING(1),
         defaultValue: '1',
         comment: '状态，0表示删除，1表示正常'
     },
-    // 创建时间
     create_time: {
         type: DataTypes.DATE,
         defaultValue: Date.now,
         comment: '创建时间'
     },
-    // 更新时间
     update_time: {
         type: DataTypes.DATE,
         defaultValue: Date.now,
@@ -43,11 +57,6 @@ const ContentModel = sequelizedb.define('tb_content', {
     }
 
 }, {})
-
-// 模型同步
-ContentModel.sync({
-    alter: true
-})
 
 // 向外暴露UserModel
 module.exports = ContentModel;

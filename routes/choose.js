@@ -11,7 +11,23 @@ const fs = require('fs')
 // 导入暴露的模型
 const ChooseModel = require('../models/ChooseModel')
 
-// 添加选择数据
+/**
+ * @api {post} /choose/add 添加选择数据
+ * @apiDescription 添加选择数据
+ * @apiName 添加选择数据
+ * @apiGroup Choose
+ * @apiBody {String} content 内容
+ * @apiBody {String} category 分类
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "添加内容成功.",
+ *      "data":  content
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/add
+ * @apiVersion 1.0.0
+ */
 router.post('/add', (req, res) => {
     const {
         content,
@@ -35,8 +51,22 @@ router.post('/add', (req, res) => {
     })
 })
 
-// 删除
-router.post('/delete', (req, res) => {
+/**
+ * @api {get} /choose/delete 删除选择数据
+ * @apiDescription 删除选择数据
+ * @apiName 删除选择数据
+ * @apiGroup Choose
+ * @apiParam {String} id 内容
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "删除内容成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/delete
+ * @apiVersion 1.0.0
+ */
+router.get('/delete', (req, res) => {
     const {
         id
     } = req.body
@@ -48,7 +78,6 @@ router.post('/delete', (req, res) => {
         res.send({
             status: 200,
             msg: '删除内容成功.',
-            data: content
         })
     }).catch(error => {
         console.error('删除内容失败.', error)
@@ -59,7 +88,23 @@ router.post('/delete', (req, res) => {
     })
 })
 
-// 修改
+/**
+ * @api {post} /choose/update 修改选择数据
+ * @apiDescription 修改选择数据
+ * @apiName 修改选择数据
+ * @apiGroup Choose
+ * @apiBody {String} id 选择数据id
+ * @apiBody {String} content 选择数据content
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "修改内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/update
+ * @apiVersion 1.0.0
+ */
 router.post('/update', (req, res) => {
     const {
         id,
@@ -86,7 +131,22 @@ router.post('/update', (req, res) => {
     })
 })
 
-// 查询
+/**
+ * @api {get} /choose/search 查询选择数据
+ * @apiDescription 查询选择数据
+ * @apiName 查询选择数据
+ * @apiGroup Choose
+ * @apiParam {String} id 内容
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/search
+ * @apiVersion 1.0.0
+ */
 router.get('/search', (req, res) => {
     const {
         id
@@ -110,8 +170,22 @@ router.get('/search', (req, res) => {
     })
 })
 
-// 根据分类获取分类内容
-router.get('/findlist', (req, res) => {
+/**
+ * @api {get} /choose/findAll 获取所有内容
+ * @apiDescription 获取所有内容
+ * @apiName 获取所有内容
+ * @apiGroup Choose
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/findAll
+ * @apiVersion 1.0.0
+ */
+router.get('/findAll', (req, res) => {
     // const {
     //     category
     // } = req.query
@@ -122,7 +196,6 @@ router.get('/findlist', (req, res) => {
         order: [
             ['create_time']
         ]
-        // 将按最大年龄进行升序排序
     }).then(content => {
         res.send({
             status: 200,

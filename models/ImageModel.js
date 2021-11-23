@@ -75,10 +75,5 @@ const ImageModel = sequelizedb.define('tb_image', {
 
 }, {})
 
-// 模型同步
-ImageModel.sync({
-    alter: true
-})
-
 // 向外暴露UserModel
 module.exports = ImageModel;

@@ -74,10 +74,5 @@ const VideoModel = sequelizedb.define('tb_video', {
     }
 }, {})
 
-// 模型同步
-VideoModel.sync({
-    alter: true
-})
-
 // 向外暴露UserModel
 module.exports = VideoModel;

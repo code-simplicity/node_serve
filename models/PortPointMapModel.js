@@ -64,8 +64,4 @@ const PortPointMapModel = sequelizedb.define('tb_port_point_map', {
 
 }, {})
 
-PortPointMapModel.sync({
-    alter: true
-})
-
 module.exports = PortPointMapModel;

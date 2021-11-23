@@ -62,10 +62,5 @@ const UserModel = sequelizedb.define('tb_user', {
     }
 }, {});
 
-// 模型同步
-UserModel.sync({
-    alter: true
-})
-
 // 向外暴露UserModel
 module.exports = UserModel;

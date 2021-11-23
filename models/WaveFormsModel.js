@@ -67,10 +67,4 @@ const WaveFormsModel = sequelizedb.define('tb_wave_forms', {
 }, {})
 
 
-
-// 模型同步
-WaveFormsModel.sync({
-    alter: true
-})
-
 module.exports = WaveFormsModel;

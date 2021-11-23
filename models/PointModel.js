@@ -56,8 +56,4 @@ const PointModel = sequelizedb.define('tb_point', {
 
 }, {})
 
-PointModel.sync({
-    alter: true
-})
-
 module.exports = PointModel;

@@ -11,7 +11,22 @@ const fs = require('fs')
 // 导入暴露的模型
 const ContentModel = require('../models/ContentModel')
 
-// 添加内容
+/**
+ * @api {post} /content/add 添加内容
+ * @apiDescription 添加内容
+ * @apiName 添加内容
+ * @apiGroup Content
+ * @apiBody {String} content 内容
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "添加内容成功.",
+ *      "data":  content
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/add
+ * @apiVersion 1.0.0
+ */
 router.post('/add', (req, res) => {
     const {
         content
@@ -33,11 +48,25 @@ router.post('/add', (req, res) => {
     })
 })
 
-// 删除
-router.post('/delete', (req, res) => {
+/**
+ * @api {get} /content/delete 删除内容
+ * @apiDescription 删除内容
+ * @apiName 删除内容
+ * @apiGroup Content
+ * @apiParam {String} id 内容
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "删除内容成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/delete
+ * @apiVersion 1.0.0
+ */
+router.get('/delete', (req, res) => {
     const {
         id
-    } = req.body
+    } = req.query
     ContentModel.destroy({
         where: {
             id
@@ -46,7 +75,6 @@ router.post('/delete', (req, res) => {
         res.send({
             status: 200,
             msg: '删除内容成功.',
-            data: content
         })
     }).catch(error => {
         console.error('删除内容失败.', error)
@@ -57,7 +85,23 @@ router.post('/delete', (req, res) => {
     })
 })
 
-// 修改
+/**
+ * @api {post} /content/update 修改内容
+ * @apiDescription 修改内容
+ * @apiName 修改内容
+ * @apiGroup Content
+ * @apiBody {String} id 选择数据id
+ * @apiBody {String} content 选择数据content
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "修改内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/update
+ * @apiVersion 1.0.0
+ */
 router.post('/update', (req, res) => {
     const {
         id,
@@ -84,7 +128,22 @@ router.post('/update', (req, res) => {
     })
 })
 
-// 查询
+/**
+ * @api {get} /content/search 查询内容
+ * @apiDescription 查询内容
+ * @apiName 查询内容
+ * @apiGroup Content
+ * @apiParam {String} id 内容id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/search
+ * @apiVersion 1.0.0
+ */
 router.get('/search', (req, res) => {
     const {
         id

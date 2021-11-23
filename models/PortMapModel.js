@@ -49,9 +49,4 @@ const PortMapModel = sequelizedb.define('tb_port_map', {
     }
 }, {})
 
-// 模型同步
-PortMapModel.sync({
-    alter: true
-})
-
 module.exports = PortMapModel;

@@ -27,7 +27,7 @@
     "nodemon": "^2.0.14",
     "sequelize": "^6.9.0"
   },
-  "apiDoc": {
+  "apidoc": {
     "name": "项目后端接口文档",
     "title": "项目后端接口文档",
     "description": "毕设接口文档",
