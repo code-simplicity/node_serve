@@ -24,15 +24,14 @@ const ContentModel = sequelizedb.define('tb_content', {
     },
     choose_id: {
         type: DataTypes.UUID,
-        defaultValue: Sequelize.UUIDV4,
         allowNull: true,
         foreignKey: true,
         references: {
             model: ChooseModel,
             key: 'id',
-            onDelete: 'NOACTION',
-            onUpdate: 'NOACTION',
-            deferrable: Deferrable.INITIALLY_IMMEDIATE
+            onDelete: 'NO ACTION',
+            onUpdate: 'NO ACTION',
+            deferrable: Deferrable.INITIALLY_DEFERRED
         },
         comment: '选择列表id（外键）'
     },

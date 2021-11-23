@@ -32,7 +32,47 @@ router.post('/add', (req, res) => {
         content
     } = req.body
     ContentModel.create({
-        content: content
+        content: content,
+    }).then(content => {
+        res.send({
+            status: 200,
+            msg: '添加内容成功.',
+            data: content
+        })
+    }).catch(error => {
+        console.error('添加内容失败.', error)
+        res.send({
+            status: 400,
+            msg: '添加内容失败，请重试！'
+        })
+    })
+})
+
+/**
+ * @api {post} /content/add/choose_id 添加内容有外键的
+ * @apiDescription 添加内容有外键的
+ * @apiName 添加内容有外键的
+ * @apiGroup Content
+ * @apiBody {String} choose_id 选择表id(外键)
+ * @apiBody {String} content 内容
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "添加内容成功.",
+ *      "data":  content
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/add/choose_id
+ * @apiVersion 1.0.0
+ */
+router.post('/add/choose_id', (req, res) => {
+    const {
+        choose_id,
+        content
+    } = req.body
+    ContentModel.create({
+        content: content,
+        choose_id: choose_id ? choose_id : ''
     }).then(content => {
         res.send({
             status: 200,
@@ -151,6 +191,45 @@ router.get('/search', (req, res) => {
     ContentModel.findOne({
         where: {
             id
+        }
+    }).then(content => {
+        res.send({
+            status: 200,
+            msg: '查询内容成功.',
+            data: content
+        })
+    }).catch(error => {
+        console.error('查询内容失败.', error)
+        res.send({
+            status: 400,
+            msg: '查询内容失败，请重试！'
+        })
+    })
+})
+
+/**
+ * @api {get} /content/search/choose_id 根据选择表id查询对应内容
+ * @apiDescription 根据选择表id查询对应内容
+ * @apiName 根据选择表id查询对应内容
+ * @apiGroup Content
+ * @apiParam {String} choose_id choose_id选择表id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询内容成功.",
+ *      "data": content
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/search/choose_id
+ * @apiVersion 1.0.0
+ */
+router.get('/search/choose_id', (req, res) => {
+    const {
+        choose_id
+    } = req.query
+    ContentModel.findOne({
+        where: {
+            choose_id
         }
     }).then(content => {
         res.send({

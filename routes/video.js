@@ -126,7 +126,7 @@ router.post('/serach', (req, res) => {
         water_level,
         wave_direction,
         embank_ment
-    } = req.query
+    } = req.body
     VideoModel.findOne({
         where: {
             [Op.and]: [{

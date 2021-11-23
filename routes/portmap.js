@@ -16,7 +16,7 @@ const PortMapModel = require('../models/PortMapModel')
 const utils = require('../utils/utils');
 
 // 文件上传到服务器的路径,存储在本地的
-const dirPath = path.join(__dirname, '..', '/public/UploadImages/point-map/' + utils.getNowFormatDate())
+const dirPath = path.join(__dirname, '..', '/public/UploadImages/port-map/' + utils.getNowFormatDate())
 
 // 存储在服务器上的,/root/docker/node_serve/ImageUpload/
 // const dirPath = path.join('/root/docker/node_serve/ImageUpload/')
@@ -88,7 +88,7 @@ router.post('/upload', upload.single('image'), (req, res) => {
     }
     PortMapModel.create({
         url: `${file.originalname}`,
-        path: '/UploadImages/point-map/' + utils.getNowFormatDate() + '/' + file.originalname,
+        path: '/UploadImages/port-map/' + utils.getNowFormatDate() + '/' + file.originalname,
         type: fileTyppe,
         name: `${file.originalname}`,
     }).then(portmap => {
@@ -160,7 +160,7 @@ router.get('/delete', (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get('/find', (req, res) => {
-    PortMapModel.findAll({}).then(portmap => {
+    PortMapModel.findOne({}).then(portmap => {
         res.send({
             status: 200,
             msg: '查询港口地图成功.',
