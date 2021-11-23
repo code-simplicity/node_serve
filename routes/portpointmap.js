@@ -157,16 +157,23 @@ router.post('/search', (req, res) => {
             ]
         }
     }).then(img => {
-        res.send({
-            status: 200,
-            msg: '查询图片成功.',
-            data: img
-        })
+        if (img) {
+            res.send({
+                status: 200,
+                msg: '查询港口点位图成功.',
+                data: img
+            })
+        } else {
+            res.send({
+                status: 400,
+                msg: '查询港口点位图失败.'
+            })
+        }
     }).catch(error => {
-        console.error('查询图片失败.', error)
+        console.error('查询港口点位图失败.', error)
         res.send({
             status: 400,
-            msg: '查询图片失败.'
+            msg: '查询港口点位图失败.'
         })
     })
 })

@@ -151,7 +151,10 @@ router.get('/search', (req, res) => {
     PointModel.findAll({
         where: {
             port_point_map_id: port_point_map_id
-        }
+        },
+        order: [
+            ['create_time']
+        ]
     }).then(point => {
         res.send({
             status: 200,

@@ -98,7 +98,7 @@ router.post('/upload', upload.single('image'), (req, res) => {
     WaveStatsModel.create({
         point_id: point_id,
         url: file.originalname,
-        path: '/UploadImages/waveforms/' + utils.getNowFormatDate() + '/' + file.originalname,
+        path: '/UploadImages/wave-stats/' + utils.getNowFormatDate() + '/' + file.originalname,
         type: fileTyppe,
         name: file.originalname,
     }).then(result => {
