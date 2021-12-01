@@ -8,6 +8,8 @@ const app = require('../app');
 const debug = require('debug')('node-serve:server');
 const http = require('http');
 
+const logger = require('../utils/log4jsLogger');
+
 /**
  * Get port from environment and store in Express.
  */
@@ -89,6 +91,6 @@ function onListening() {
     'pipe ' + addr :
     'port ' + addr.port;
   // debug('Listening on ' + bind);
-
+  logger.info(`Server running on port ${port}`);
   console.log(`访问地址 http://${host ? host : 'localhost'}:${port}`)
 }

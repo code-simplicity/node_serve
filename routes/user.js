@@ -12,6 +12,8 @@ const UserModel = require('../models/UserModel')
 
 const jwtUtils = require('../utils/jwtUtils')
 
+const utils = require('../utils/utils');
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
   res.render('index', {
@@ -150,7 +152,7 @@ router.post('/user/login', async (req, res, next) => {
     })
     if (user) {
       // 传递id，生成token
-      const token = await jwtUtils.setToken(user.id, )
+      const token = await jwtUtils.setToken(user.id,)
       // 生成cookie，将token存在cookie中，并且交给浏览器保存
       res.cookie('token', token, {
         maxAge: 10 * 60 * 60 * 24
@@ -159,24 +161,16 @@ router.post('/user/login', async (req, res, next) => {
       const data = {
         user_name: user.user_name,
         id: user.id,
+        roles: user.roles
       }
       // 如果用户类型为管理员，就可以登录管理中心
-      if (user.roles === 'admin') {
-        // 发送响应给前端
-        res.send({
-          status: 200,
-          msg: '登录成功.',
-          data: data,
-          token: token
-        })
-      } else if (user.roles === 'user') {
-        res.send({
-          status: 200,
-          msg: '登录成功.',
-          data: data,
-          token: token
-        })
-      }
+      // 发送响应给前端
+      res.send({
+        status: 200,
+        msg: '登录成功.',
+        data: data,
+        token: token
+      })
     } else {
       // 登录失败
       res.send({
@@ -191,6 +185,57 @@ router.post('/user/login', async (req, res, next) => {
       msg: '登陆异常, 请重新尝试.'
     })
     next(error);
+  }
+})
+
+/**
+ * @api {get} /user/info 获取用户信息
+ * @apiDescription 获取用户信息
+ * @apiName 获取用户信息
+ * @apiGroup User
+ * @apiParam {String} id 管理员账户
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "获取用户信息成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/user/info
+ * @apiVersion 1.0.0
+ */
+router.get('/user/info', async (req, res) => {
+  try {
+    const { id } = req.query
+    const userInfo = await UserModel.findOne({
+      where: {
+        id
+      }
+    })
+    if (userInfo) {
+      const data = {
+        user_name: userInfo.user_name,
+        id: userInfo.id,
+        roles: userInfo.roles,
+        create_time: userInfo.create_time,
+        update_time: userInfo.update_time
+      }
+      res.send({
+        status: 200,
+        msg: '获取用户信息成功.',
+        data: data
+      })
+    } else {
+      res.send({
+        status: 400,
+        msg: '获取用户信息失败.',
+      })
+    }
+  } catch (error) {
+    console.error('获取用户信息失败.', error)
+    res.send({
+      status: 400,
+      msg: '获取用户信息失败.'
+    })
   }
 })
 
@@ -241,12 +286,20 @@ router.get('/user/logout', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/list
  * @apiVersion 1.0.0
  */
-router.get('/user/list', (req, res) => {
-  UserModel.findAll().then(user => {
+router.post('/user/list', (req, res) => {
+   const {
+        pageNum,
+        pageSize
+    } = req.body
+  UserModel.findAll({ 
+    order: [
+            ['create_time', 'DESC']
+        ]
+    }).then(user => {
     res.send({
       status: 200,
       msg: '查询所有用户列表成功.',
-      data: user
+      data: utils.pageFilter(user, pageNum, pageSize),
     })
   }).catch(error => {
     console.error('获取用户列表异常.', error)
@@ -281,15 +334,15 @@ router.get('/user/list/search', (req, res) => {
   UserModel.findAll({
     where: {
       [Op.or]: [{
-          id: {
-            [Op.like]: `%${user}%`
-          }
-        },
-        {
-          user_name: {
-            [Op.like]: `%${user}%`
-          }
+        id: {
+          [Op.like]: `%${user}%`
         }
+      },
+      {
+        user_name: {
+          [Op.like]: `%${user}%`
+        }
+      }
       ]
     }
   }).then(user => {
@@ -308,6 +361,7 @@ router.get('/user/list/search', (req, res) => {
     })
   })
 })
+
 
 /**
  * @api {post} /user/update 更新用户信息
@@ -351,12 +405,34 @@ router.post('/user/update', (req, res) => {
   })
 })
 
-// 查询当前用户，并且修改得分
-router.post('/user/update/score', (req, res) => {
+/**
+ * @api {post} /user/add/score 查询当前用户，并且添加得分
+ * @apiDescription 查询当前用户，并且修改得分
+ * @apiName 查询当前用户，并且修改得分
+ * @apiGroup User
+ * @apiBody  {String} id="1807010210" 学号
+ * @apiBody  {String} score="0" 得分
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "得分添加成功.",
+ *      "data": user,
+ *  }
+ * @apiSampleRequest http://localhost:5050/user/add/score
+ * @apiVersion 1.0.0
+ */
+router.post('/user/add/score', (req, res) => {
   const {
     id,
     score
   } = req.body
+  if (score > 100 || score < 0) {
+    return res.send({
+      status: 400,
+      msg: '得分不能低于0，不能超过100.',
+    })
+  }
   UserModel.update({
     score: score
   }, {
@@ -364,17 +440,23 @@ router.post('/user/update/score', (req, res) => {
       id: id
     }
   }).then(user => {
-    res.send({
-      status: 200,
-      msg: '得分添加成功.',
-      data: user
-    })
+    if (user) {
+      res.send({
+        status: 200,
+        msg: '当前获得分数：' + score + '分',
+        data: score,
+      })
+    } else {
+      res.send({
+        status: 400,
+        msg: '得分添加失败，视频未看完或者有其他任务未完成！',
+      })
+    }
   }).catch(error => {
     console.error('得分添加失败.', error)
     res.send({
-      status: 200,
+      status: 400,
       msg: '得分添加失败，请检查重试！',
-      data: user
     })
   })
 })

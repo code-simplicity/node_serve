@@ -111,7 +111,7 @@ app.use(expressJWT({
   // 校验是否存在token，有token才可以访问
   credentialsRequired: true
 }).unless({
-  path: ['/user/login', '/user/add', '/user/logout']
+  path: ['/user/login', '/user/add', '/user/logout', '/user/info']
 }))
 
 // error handler

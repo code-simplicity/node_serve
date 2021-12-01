@@ -144,8 +144,13 @@ router.post('/serach', (req, res) => {
         if (video) {
             res.send({
                 status: 200,
-                msg: '查询视频成功',
+                msg: '查询视频成功.',
                 data: video
+            })
+        } else {
+            res.send({
+                status: 400,
+                msg: '查询视频失败，请重试！'
             })
         }
     }).catch(error => {

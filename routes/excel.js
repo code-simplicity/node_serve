@@ -1,34 +1,29 @@
 // 处理excel导入,导出
-const express = require('express');
+const express = require("express");
 
-const path = require('path')
-const fs = require('fs')
+const path = require("path");
+const fs = require("fs");
 
 const xlsx = require("node-xlsx");
 
-const multer = require('multer')
+const multer = require("multer");
+
+const { Op } = require("sequelize");
 
 const router = express.Router();
 
 // 处理excel文件
 const upload = multer({
-    dest: "../public/upload"
+  dest: "../public/upload",
 });
 
 // 定义全局数组
-const excelHead = [
-    "id",
-    "user_name",
-    "password",
-    "roles",
-    "state",
-    "score"
-];
+const excelHead = ["id", "user_name", "password", "roles", "state", "score"];
 
 // 导入暴露的模型
-const UserModel = require('../models/UserModel')
+const UserModel = require("../models/UserModel");
 
-const excelUtils = require('../utils/excelUtils')
+const excelUtils = require("../utils/excelUtils");
 
 /**
  * 1. 点击下载excel模板，生成blob流给前端
@@ -51,41 +46,35 @@ const excelUtils = require('../utils/excelUtils')
  * @apiVersion 1.0.0
  */
 router.get("/export", (req, res) => {
-    const excelData = [{
-        name: "用户模板.xlsx", // 给第一个sheet指名字
-        data: [
-            [
-                "学号",
-                "姓名",
-                "密码",
-                "角色",
-                "状态",
-                "得分"
-            ],
-        ],
-    }, ];
-    const optionArr = {
-        "!cols": [{
-                wch: 10
-            },
-            {
-                wch: 10
-            },
-            {
-                wch: 10
-            },
-            {
-                wch: 10
-            },
-            {
-                wch: 10
-            },
-            {
-                wch: 10
-            }
-        ],
-    };
-    res.send(xlsx.build(excelData, optionArr));
+  const excelData = [
+    {
+      name: "用户模板.xlsx", // 给第一个sheet指名字
+      data: [["学号", "姓名", "密码", "角色", "状态", "得分"]],
+    },
+  ];
+  const optionArr = {
+    "!cols": [
+      {
+        wch: 10,
+      },
+      {
+        wch: 10,
+      },
+      {
+        wch: 10,
+      },
+      {
+        wch: 10,
+      },
+      {
+        wch: 10,
+      },
+      {
+        wch: 10,
+      },
+    ],
+  };
+  res.send(xlsx.build(excelData, optionArr));
 });
 
 // excel导入数据到用户表,
@@ -104,67 +93,142 @@ router.get("/export", (req, res) => {
  * @apiSampleRequest http://localhost:5050/excel/upload
  * @apiVersion 1.0.0
  */
-router.post('/upload', upload.single('file'), (req, res, next) => {
-    try {
-        // 重命名文件夹
-        fs.rename(
-            // 上传文件路径，这里可以修改，后期上线改为服务器的路径
-            req.file.path,
-            req.file.destination + "/" + "用户模板.xlsx",
-            (err) => {
-                if (err) {
-                    console.log(err);
-                }
-            }
-        )
-        // 解析模板,返回对象形式的键值对
-        const excelObj = xlsx.parse("../public/upload/用户模板.xlsx")
-        console.log(`excelObj`, excelObj[0].data)
-        const dataArr = excelObj[0].data;
-        // 判断是不是使用的指定模板导入的
-        if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态,得分") {
-            // 删除二位数组第一项，也就是表头数据
-            dataArr.shift()
-            // 遍历
-            dataArr.map((item) => {
-                const addData = {}
-                excelHead.map((key, index) => {
-                    addData[key] = item[index] ? item[index] : ''
-                })
-                console.log(`addData`, addData)
-                // 使用模板插入数据
-                UserModel.bulkCreate([
-                    addData
-                ]).then(user => {
-                    if (user) {
-                        return res.send({
-                            status: 200,
-                            msg: '成功导入excel到数据库.'
-                        })
-                    }
-                }).catch(err => {
-                    res.send({
-                        status: 201,
-                        msg: '模板匹配错误，请检查关键字.'
-                    })
-                    next(err)
-                })
-            })
-        } else {
-            // 不是的话,返回给前端错误状态
-            return res.send({
-                status: 201,
-                msg: '模板匹配错误，请检查关键字.'
-            })
+router.post("/upload", upload.single("file"), (req, res, next) => {
+  try {
+    // 重命名文件夹
+    fs.rename(
+      // 上传文件路径，这里可以修改，后期上线改为服务器的路径
+      req.file.path,
+      req.file.destination + "/" + "用户模板.xlsx",
+      (err) => {
+        if (err) {
+          console.log(err);
         }
-    } catch (error) {
-        console.error('导入异常.', error)
-        res.send({
-            status: 201,
-            msg: '导入异常, 请重新尝试'
-        })
+      }
+    );
+    // 解析模板,返回对象形式的键值对
+    const excelObj = xlsx.parse("../public/upload/用户模板.xlsx");
+    console.log(`excelObj`, excelObj[0].data);
+    const dataArr = excelObj[0].data;
+    // 判断是不是使用的指定模板导入的
+    if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态,得分") {
+      // 删除二位数组第一项，也就是表头数据
+      dataArr.shift();
+      // 遍历
+      dataArr.map((item) => {
+        const addData = {};
+        excelHead.map((key, index) => {
+          addData[key] = item[index] ? item[index] : "";
+        });
+        console.log(`addData`, addData);
+        // 使用模板插入数据
+        UserModel.bulkCreate([addData]);
+      });
+      res.send({
+        status: 200,
+        msg: "成功导入excel到数据库.",
+      });
+    } else {
+      // 不是的话,返回给前端错误状态
+      return res.send({
+        status: 201,
+        msg: "模板匹配错误，请检查关键字.",
+      });
     }
+  } catch (error) {
+    console.error("导入异常.", error);
+    res.send({
+      status: 201,
+      msg: "导入异常, 请重新尝试",
+    });
+  }
+});
 
-})
+/**
+ * @api {post} /excel/export/user 表格数据导出
+ * @apiDescription 表格数据导出
+ * @apiName 表格数据导出
+ * @apiGroup Excel
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "用户导出成功".",
+ *      "data":  xlsx.build(excelData, optionArr)
+ *  }
+ * @apiSampleRequest http://localhost:5050/excel/export/user
+ * @apiVersion 1.0.0
+ */
+router.post("/export/user", async (req, res) => {
+  // 数组，每个值直接用逗号隔开
+  const { exportIds } = req.body;
+  const user = await UserModel.findAll({
+    where: {
+      id: {
+        [Op.in]: exportIds,
+      },
+    },
+  });
+  if (user) {
+    const exportData = JSON.parse(JSON.stringify(user));
+    console.log(`user`, user);
+    const excelData = [
+      {
+        name: "用户模板.xlsx",
+        data: [
+          [
+            "学号",
+            "姓名",
+            "密码",
+            "角色",
+            "状态",
+            "得分",
+            "创建时间",
+            "更新时间",
+          ],
+        ],
+      },
+    ];
+    const optionArr = {
+      "!cols": [
+        {
+          wch: 10,
+        },
+        {
+          wch: 10,
+        },
+        {
+          wch: 10,
+        },
+        {
+          wch: 10,
+        },
+        {
+          wch: 10,
+        },
+        {
+          wch: 10,
+        },
+        {
+          wch: 20,
+        },
+        {
+          wch: 20,
+        },
+      ],
+    };
+    exportData.map((item) => {
+      const exportArr = [];
+      for (const key in item) {
+        exportArr.push(item[key]);
+      }
+      // 去掉表头
+      exportArr.shift();
+      //  装载数据
+      excelData[0].data.push(exportArr);
+    });
+    res.send(xlsx.build(excelData, optionArr));
+  }
+});
 
 module.exports = router;
