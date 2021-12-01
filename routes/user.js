@@ -1,23 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {
-  Op
-} = require("sequelize");
+const { Op } = require("sequelize");
 
-const path = require('path')
-const fs = require('fs')
+const path = require("path");
+const fs = require("fs");
 
 // 导入暴露的模型
-const UserModel = require('../models/UserModel')
+const UserModel = require("../models/UserModel");
 
-const jwtUtils = require('../utils/jwtUtils')
+const jwtUtils = require("../utils/jwtUtils");
 
-const utils = require('../utils/utils');
+const utils = require("../utils/utils");
 
 /* GET home page. */
-router.get('/', function (req, res, next) {
-  res.render('index', {
-    title: 'Express'
+router.get("/", function (req, res, next) {
+  res.render("index", {
+    title: "Express",
   });
 });
 
@@ -40,47 +38,45 @@ router.get('/', function (req, res, next) {
  * @apiSampleRequest http://localhost:5050/user/add
  * @apiVersion 1.0.0
  */
-router.post('/user/add', (req, res) => {
+router.post("/user/add", (req, res) => {
   // 读取请求参数
-  const {
-    id,
-    user_name,
-    password,
-    roles
-  } = req.body
+  const { id, user_name, password, roles } = req.body;
   // 根据id查询用户是否存在
   UserModel.findOne({
     where: {
-      id
-    }
-  }).then(user => {
-    // 如果用户id存在，返回错误信息,提示用户存在
-    if (user) {
+      id,
+    },
+  })
+    .then((user) => {
+      // 如果用户id存在，返回错误信息,提示用户存在
+      if (user) {
+        res.send({
+          status: 400,
+          msg: "此用户已经存在.",
+        });
+        console.info("用户信息", user);
+      } else {
+        // 保存用户
+        return UserModel.create({
+          ...req.body,
+        });
+      }
+    })
+    .then((user) => {
+      res.send({
+        status: 200,
+        msg: "添加用户成功.",
+        data: user,
+      });
+    })
+    .catch((error) => {
+      console.error("注册异常", error);
       res.send({
         status: 400,
-        msg: '此用户已经存在.'
-      })
-      console.info('用户信息', user)
-    } else {
-      // 保存用户
-      return UserModel.create({
-        ...req.body
-      })
-    }
-  }).then(user => {
-    res.send({
-      status: 200,
-      msg: "添加用户成功.",
-      data: user
-    })
-  }).catch(error => {
-    console.error('注册异常', error)
-    res.send({
-      status: 400,
-      msg: '添加用户异常, 请重新尝试'
-    })
-  })
-})
+        msg: "添加用户异常, 请重新尝试",
+      });
+    });
+});
 
 /**
  * @api {post} /user/delete 删除用户
@@ -97,28 +93,26 @@ router.post('/user/add', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/delete
  * @apiVersion 1.0.0
  */
-router.post('/user/delete', (req, res) => {
-  const {
-    id
-  } = req.body
+router.post("/user/delete", (req, res) => {
+  const { id } = req.body;
   UserModel.destroy({
     where: {
-      id
-    }
-  }).then(user => {
+      id,
+    },
+  }).then((user) => {
     if (user) {
       res.send({
         status: 200,
-        msg: '删除用户成功.'
-      })
+        msg: "删除用户成功.",
+      });
     } else {
       res.send({
         status: 400,
-        msg: '用户不存在.'
-      })
+        msg: "用户不存在.",
+      });
     }
-  })
-})
+  });
+});
 
 /**
  * @api {post} /user/login 用户登录
@@ -138,55 +132,52 @@ router.post('/user/delete', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/login
  * @apiVersion 1.0.0
  */
-router.post('/user/login', async (req, res, next) => {
+router.post("/user/login", async (req, res, next) => {
   try {
-    const {
-      id,
-      password
-    } = req.body
+    const { id, password } = req.body;
     const user = await UserModel.findOne({
       where: {
         id,
-        password
-      }
-    })
+        password,
+      },
+    });
     if (user) {
       // 传递id，生成token
-      const token = await jwtUtils.setToken(user.id,)
+      const token = await jwtUtils.setToken(user.id);
       // 生成cookie，将token存在cookie中，并且交给浏览器保存
-      res.cookie('token', token, {
-        maxAge: 10 * 60 * 60 * 24
-      })
+      res.cookie("token", token, {
+        maxAge: 10 * 60 * 60 * 24,
+      });
       // 响应数据中不要携带password，避免被攻击
       const data = {
         user_name: user.user_name,
         id: user.id,
-        roles: user.roles
-      }
+        roles: user.roles,
+      };
       // 如果用户类型为管理员，就可以登录管理中心
       // 发送响应给前端
       res.send({
         status: 200,
-        msg: '登录成功.',
+        msg: "登录成功.",
         data: data,
-        token: token
-      })
+        token: token,
+      });
     } else {
       // 登录失败
       res.send({
         status: 400,
-        msg: '用户名或密码不正确.'
-      })
+        msg: "用户名或密码不正确.",
+      });
     }
   } catch (error) {
-    console.error('登陆异常.', error)
+    console.error("登陆异常.", error);
     res.send({
       status: 400,
-      msg: '登陆异常, 请重新尝试.'
-    })
+      msg: "登陆异常, 请重新尝试.",
+    });
     next(error);
   }
-})
+});
 
 /**
  * @api {get} /user/info 获取用户信息
@@ -203,41 +194,41 @@ router.post('/user/login', async (req, res, next) => {
  * @apiSampleRequest http://localhost:5050/user/info
  * @apiVersion 1.0.0
  */
-router.get('/user/info', async (req, res) => {
+router.get("/user/info", async (req, res) => {
   try {
-    const { id } = req.query
+    const { id } = req.query;
     const userInfo = await UserModel.findOne({
       where: {
-        id
-      }
-    })
+        id,
+      },
+    });
     if (userInfo) {
       const data = {
         user_name: userInfo.user_name,
         id: userInfo.id,
         roles: userInfo.roles,
         create_time: userInfo.create_time,
-        update_time: userInfo.update_time
-      }
+        update_time: userInfo.update_time,
+      };
       res.send({
         status: 200,
-        msg: '获取用户信息成功.',
-        data: data
-      })
+        msg: "获取用户信息成功.",
+        data: data,
+      });
     } else {
       res.send({
         status: 400,
-        msg: '获取用户信息失败.',
-      })
+        msg: "获取用户信息失败.",
+      });
     }
   } catch (error) {
-    console.error('获取用户信息失败.', error)
+    console.error("获取用户信息失败.", error);
     res.send({
       status: 400,
-      msg: '获取用户信息失败.'
-    })
+      msg: "获取用户信息失败.",
+    });
   }
-})
+});
 
 /**
  * @api {get} /user/logout 退出登录
@@ -253,23 +244,23 @@ router.get('/user/info', async (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/logout
  * @apiVersion 1.0.0
  */
-router.get('/user/logout', (req, res) => {
+router.get("/user/logout", (req, res) => {
   try {
     // 清除cookie中的token，实现退出
-    res.clearCookie('token')
+    res.clearCookie("token");
     res.send({
       status: 200,
-      msg: '退出登录成功.'
-    })
+      msg: "退出登录成功.",
+    });
   } catch (error) {
-    console.error('退出异常.', error)
+    console.error("退出异常.", error);
     res.send({
       status: 400,
-      msg: '退出异常, 请重新尝试.'
-    })
+      msg: "退出异常, 请重新尝试.",
+    });
     next(error);
   }
-})
+});
 
 /**
  * @api {get} /user/list 获取所用用户列表
@@ -286,29 +277,26 @@ router.get('/user/logout', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/list
  * @apiVersion 1.0.0
  */
-router.post('/user/list', (req, res) => {
-   const {
-        pageNum,
-        pageSize
-    } = req.body
-  UserModel.findAll({ 
-    order: [
-            ['create_time', 'DESC']
-        ]
-    }).then(user => {
-    res.send({
-      status: 200,
-      msg: '查询所有用户列表成功.',
-      data: utils.pageFilter(user, pageNum, pageSize),
-    })
-  }).catch(error => {
-    console.error('获取用户列表异常.', error)
-    res.send({
-      status: 400,
-      msg: '获取用户列表异常, 请重新尝试.',
-    })
+router.post("/user/list", (req, res) => {
+  const { pageNum, pageSize } = req.body;
+  UserModel.findAll({
+    order: [["create_time", "DESC"]],
   })
-})
+    .then((user) => {
+      res.send({
+        status: 200,
+        msg: "查询所有用户列表成功.",
+        data: utils.pageFilter(user, pageNum, pageSize),
+      });
+    })
+    .catch((error) => {
+      console.error("获取用户列表异常.", error);
+      res.send({
+        status: 400,
+        msg: "获取用户列表异常, 请重新尝试.",
+      });
+    });
+});
 
 /**
  * @api {get} /user/list/search 搜索用户
@@ -326,42 +314,42 @@ router.post('/user/list', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/list/search
  * @apiVersion 1.0.0
  */
-router.get('/user/list/search', (req, res) => {
-  const {
-    user
-  } = req.query
+router.get("/user/list/search", (req, res) => {
+  const { user } = req.query;
   // 通过id或者user_name查询
   UserModel.findAll({
     where: {
-      [Op.or]: [{
-        id: {
-          [Op.like]: `%${user}%`
-        }
-      },
-      {
-        user_name: {
-          [Op.like]: `%${user}%`
-        }
-      }
-      ]
-    }
-  }).then(user => {
-    if (user) {
-      res.send({
-        status: 200,
-        msg: '查询用户成功.',
-        data: user
-      })
-    }
-  }).catch(error => {
-    console.error('查询用户失败.', error)
-    res.send({
-      status: 400,
-      msg: '查询用户失败, 请重新尝试.',
-    })
+      [Op.or]: [
+        {
+          id: {
+            [Op.like]: `%${user}%`,
+          },
+        },
+        {
+          user_name: {
+            [Op.like]: `%${user}%`,
+          },
+        },
+      ],
+    },
   })
-})
-
+    .then((user) => {
+      if (user) {
+        res.send({
+          status: 200,
+          msg: "查询用户成功.",
+          data: user,
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("查询用户失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询用户失败, 请重新尝试.",
+      });
+    });
+});
 
 /**
  * @api {post} /user/update 更新用户信息
@@ -384,26 +372,28 @@ router.get('/user/list/search', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/update
  * @apiVersion 1.0.0
  */
-router.post('/user/update', (req, res) => {
-  const user = req.body
+router.post("/user/update", (req, res) => {
+  const user = req.body;
   UserModel.update(user, {
     where: {
-      id: user.id
-    }
-  }).then(data => {
-    res.send({
-      status: 200,
-      msg: '更新用户信息成功.',
-      data: data
-    })
-  }).catch(error => {
-    console.error('更新用户信息失败.', error)
-    res.send({
-      status: 400,
-      msg: '更新用户信息失败, 请重新尝试.',
-    })
+      id: user.id,
+    },
   })
-})
+    .then((data) => {
+      res.send({
+        status: 200,
+        msg: "更新用户信息成功.",
+        data: data,
+      });
+    })
+    .catch((error) => {
+      console.error("更新用户信息失败.", error);
+      res.send({
+        status: 400,
+        msg: "更新用户信息失败, 请重新尝试.",
+      });
+    });
+});
 
 /**
  * @api {post} /user/add/score 查询当前用户，并且添加得分
@@ -422,43 +412,45 @@ router.post('/user/update', (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/add/score
  * @apiVersion 1.0.0
  */
-router.post('/user/add/score', (req, res) => {
-  const {
-    id,
-    score
-  } = req.body
+router.post("/user/add/score", (req, res) => {
+  const { id, score } = req.body;
   if (score > 100 || score < 0) {
     return res.send({
       status: 400,
-      msg: '得分不能低于0，不能超过100.',
-    })
+      msg: "得分不能低于0，不能超过100.",
+    });
   }
-  UserModel.update({
-    score: score
-  }, {
-    where: {
-      id: id
+  UserModel.update(
+    {
+      score: score,
+    },
+    {
+      where: {
+        id: id,
+      },
     }
-  }).then(user => {
-    if (user) {
-      res.send({
-        status: 200,
-        msg: '当前获得分数：' + score + '分',
-        data: score,
-      })
-    } else {
+  )
+    .then((user) => {
+      if (user) {
+        res.send({
+          status: 200,
+          msg: "当前获得分数：" + score + "分",
+          data: score,
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "得分添加失败，视频未看完或者有其他任务未完成！",
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("得分添加失败.", error);
       res.send({
         status: 400,
-        msg: '得分添加失败，视频未看完或者有其他任务未完成！',
-      })
-    }
-  }).catch(error => {
-    console.error('得分添加失败.', error)
-    res.send({
-      status: 400,
-      msg: '得分添加失败，请检查重试！',
-    })
-  })
-})
+        msg: "得分添加失败，请检查重试！",
+      });
+    });
+});
 
 module.exports = router;
