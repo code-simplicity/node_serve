@@ -1,3 +1,7 @@
 /node_modules
 /public/video
 /public/UploadImages
+yarn.lock
+yarn-error.log
+package-lock.json
+logs

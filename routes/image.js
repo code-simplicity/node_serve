@@ -1,44 +1,29 @@
 // 处理图像的上传
-const express = require('express')
-const fs = require('fs')
-const path = require('path')
-const {
-    Op
-} = require("sequelize");
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const { Op } = require("sequelize");
 
 const router = express.Router();
 
-const multer = require('multer')
+const multer = require("multer");
 
 // 导入暴露的模型
-const ImageModel = require('../models/ImageModel')
+const ImageModel = require("../models/ImageModel");
 
 // 引入常量
-const Constants = require('../utils/Constants')
+const Constants = require("../utils/Constants");
 
-const Utils = require('../utils/utils');
-
-//获取时间
-function getNowFormatDate() {
-    const date = new Date();
-    const seperator = "-";
-    const month = date.getMonth() + 1;
-    const strDate = date.getDate();
-    if (month >= 1 && month <= 9) {
-        month = "0" + month;
-    }
-    if (strDate >= 0 && strDate <= 9) {
-        strDate = "0" + strDate;
-    }
-    const currentdate = date.getFullYear() + seperator + month + seperator + strDate;
-    return currentdate.toString();
-}
+const utils = require("../utils/utils");
 
 // 文件上传到服务器的路径,存储在本地的
-const dirPath = path.join(__dirname, '..', '/public/UploadImages/' + getNowFormatDate())
+const dirPath = path.join(
+  __dirname,
+  "..",
+  "/public/UploadImages/" + utils.getNowFormatDate()
+);
 
-
-const publicUrl = path.join(__dirname, '..', 'public')
+const publicUrl = path.join(__dirname, "..", "public");
 
 // 存储在服务器上的,/root/docker/node_serve/ImageUpload/
 // const dirPath = path.join('/root/docker/node_serve/ImageUpload/')
@@ -46,28 +31,28 @@ const publicUrl = path.join(__dirname, '..', 'public')
 // 创建图片保存的路径,绝对路径
 // 配置规则 配置目录/日期/原名称.类型
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (!fs.existsSync(dirPath)) {
-            fs.mkdir(dirPath, function (err) {
-                if (err) {
-                    console.log(err)
-                } else {
-                    cb(null, dirPath)
-                }
-            })
+  destination: function (req, file, cb) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdir(dirPath, function (err) {
+        if (err) {
+          console.log(err);
         } else {
-            cb(null, dirPath)
+          cb(null, dirPath);
         }
-    },
-    filename: function (req, file, cb) {
-        console.log('filename()', file)
-        cb(null, file.originalname)
+      });
+    } else {
+      cb(null, dirPath);
     }
-})
+  },
+  filename: function (req, file, cb) {
+    console.log("filename()", file);
+    cb(null, file.originalname);
+  },
+});
 
 const upload = multer({
-    storage
-})
+  storage,
+});
 
 // const uploadFile = upload.single('image')
 
@@ -90,70 +75,77 @@ const upload = multer({
  * @apiSampleRequest http://localhost:5050/image/upload
  * @apiVersion 1.0.0
  */
-router.post('/upload', upload.single('image'), (req, res) => {
-    const {
-        water_level,
-        wave_direction,
-        embank_ment
-    } = req.body
-    // 判断是否有文件
-    const file = req.file
-    console.log(`file`, file)
-    if (file === null) {
-        return res.send({
-            status: 400,
-            msg: '图片不可以为空.',
-        })
-    }
-    // 获取文件类型是image/png还是其他
-    const fileTyppe = file.mimetype
-    // 获取图片相关数据，比如文件名称，文件类型
-    const extName = path.extname(file.path)
-    // 去掉拓展名的一点
-    const extNameOut = extName.substr(1)
-    // 返回文件的类型
-    const type = getType(fileTyppe, extNameOut)
-    if (type === null) {
-        res.send({
-            status: 400,
-            msg: '不支持该类型的图片.',
-        })
-        return
-    }
-    ImageModel.create({
-        url: `${file.originalname}`,
-        path: '/UploadImages/' + getNowFormatDate() + '/' + file.originalname,
-        type: fileTyppe,
-        name: `${file.originalname}`,
-        water_level: water_level,
-        wave_direction: wave_direction,
-        embank_ment: embank_ment
-    }).then(img => {
-        res.send({
-            status: 200,
-            msg: '图片上传服务器成功.',
-            data: img
-        })
-    }).catch(error => {
-        console.error('图片上传失败.', error)
-        res.send({
-            status: 400,
-            msg: '图片上传失败.'
-        })
+router.post("/upload", upload.single("image"), (req, res) => {
+  const { water_level, wave_direction, embank_ment } = req.body;
+  // 判断是否有文件
+  const file = req.file;
+  console.log(`file`, file);
+  if (file === null) {
+    return res.send({
+      status: 400,
+      msg: "图片不可以为空.",
+    });
+  }
+  // 获取文件类型是image/png还是其他
+  const fileTyppe = file.mimetype;
+  // 获取图片相关数据，比如文件名称，文件类型
+  const extName = path.extname(file.path);
+  // 去掉拓展名的一点
+  const extNameOut = extName.substr(1);
+  // 返回文件的类型
+  const type = getType(fileTyppe, extNameOut);
+  if (type === null) {
+    res.send({
+      status: 400,
+      msg: "不支持该类型的图片.",
+    });
+    return;
+  }
+  ImageModel.create({
+    url: `${file.originalname}`,
+    path: "/UploadImages/" + utils.getNowFormatDate() + "/" + file.originalname,
+    type: fileTyppe,
+    name: `${file.originalname}`,
+    water_level: water_level,
+    wave_direction: wave_direction,
+    embank_ment: embank_ment,
+  })
+    .then((img) => {
+      res.send({
+        status: 200,
+        msg: "图片上传服务器成功.",
+        data: img,
+      });
     })
-})
+    .catch((error) => {
+      console.error("图片上传失败.", error);
+      res.send({
+        status: 400,
+        msg: "图片上传失败.",
+      });
+    });
+});
 
 // 判断图片类型是否是平时我们所支持的
 function getType(contentType, name) {
-    let type = null
-    if (Constants.TYPE_PNG_WITH_PREFIX === contentType && name === Constants.TYPE_PNG) {
-        type = Constants.TYPE_PNG
-    } else if (Constants.TYPE_JPG_WITH_PREFIX === contentType && name === Constants.TYPE_JPG) {
-        type = Constants.TYPE_JPG
-    } else if (Constants.TYPE_GIF_WITH_PREFIX === contentType && name === Constants.TYPE_GIF) {
-        type = Constants.TYPE_GIF
-    }
-    return type
+  let type = null;
+  if (
+    Constants.TYPE_PNG_WITH_PREFIX === contentType &&
+    name === Constants.TYPE_PNG
+  ) {
+    type = Constants.TYPE_PNG;
+  } else if (
+    Constants.TYPE_JPG_WITH_PREFIX === contentType &&
+    name === Constants.TYPE_JPG
+  ) {
+    type = Constants.TYPE_JPG;
+  } else if (
+    Constants.TYPE_GIF_WITH_PREFIX === contentType &&
+    name === Constants.TYPE_GIF
+  ) {
+    type = Constants.TYPE_GIF;
+  }
+  return type;
 }
 
 // 图片请求，通过请求参数(名称，水位高低，波浪来向，外堤布置三个参数获取到图片)
@@ -176,44 +168,42 @@ function getType(contentType, name) {
  * @apiSampleRequest http://localhost:5050/image/search
  * @apiVersion 1.0.0
  */
-router.post('/search', (req, res) => {
-    // 通过图片名称，水位，波浪来向，堤坝布置查询图片
-    const {
-        name,
-        water_level,
-        wave_direction,
-        embank_ment
-    } = req.body
-    ImageModel.findOne({
-        where: {
-            [Op.and]: [{
-                    name: name
-                },
-                {
-                    water_level: water_level
-                },
-                {
-                    wave_direction: wave_direction
-                },
-                {
-                    embank_ment: embank_ment
-                }
-            ]
-        }
-    }).then(img => {
-        res.send({
-            status: 200,
-            msg: '查询图片成功.',
-            data: img
-        })
-    }).catch(error => {
-        console.error('查询图片失败.', error)
-        res.send({
-            status: 400,
-            msg: '查询图片失败.'
-        })
+router.post("/search", (req, res) => {
+  // 通过图片名称，水位，波浪来向，堤坝布置查询图片
+  const { name, water_level, wave_direction, embank_ment } = req.body;
+  ImageModel.findOne({
+    where: {
+      [Op.and]: [
+        {
+          name: name,
+        },
+        {
+          water_level: water_level,
+        },
+        {
+          wave_direction: wave_direction,
+        },
+        {
+          embank_ment: embank_ment,
+        },
+      ],
+    },
+  })
+    .then((img) => {
+      res.send({
+        status: 200,
+        msg: "查询图片成功.",
+        data: img,
+      });
     })
-})
+    .catch((error) => {
+      console.error("查询图片失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询图片失败.",
+      });
+    });
+});
 
 /**
  * @api {get} /image/find/image 去掉数据库的查找
@@ -233,31 +223,27 @@ router.post('/search', (req, res) => {
  * @apiSampleRequest http://localhost:5050/image/find/image
  * @apiVersion 1.0.0
  */
-router.get('/find/image', (req, res) => {
-    try {
-        const {
-            folder,
-            subfolder
-        } = req.query
-        let fn = req.query.fn + '.png'
-        let path = `pic/${folder}/${subfolder}/${fn}`
-        if (folder !== null || subfolder !== null || fn !== null) {
-            res.send({
-                status: 200,
-                msg: '获取图片成功',
-                // data: 'http://localhost:5050/ImagesUpload/' + path,
-                data: '/ImagesUpload/' + path,
-            });
-        }
-    } catch (error) {
-        console.error('参数不完整.')
-        res.send({
-            status: 400,
-            msg: '参数不完整.',
-        });
+router.get("/find/image", (req, res) => {
+  try {
+    const { folder, subfolder } = req.query;
+    let fn = req.query.fn + ".png";
+    let path = `pic/${folder}/${subfolder}/${fn}`;
+    if (folder !== null || subfolder !== null || fn !== null) {
+      res.send({
+        status: 200,
+        msg: "获取图片成功",
+        // data: 'http://localhost:5050/ImagesUpload/' + path,
+        data: "/ImagesUpload/" + path,
+      });
     }
-})
-
+  } catch (error) {
+    console.error("参数不完整.");
+    res.send({
+      status: 400,
+      msg: "参数不完整.",
+    });
+  }
+});
 
 /**
  * @api {get} /image/search/one搜索图片
@@ -275,28 +261,28 @@ router.get('/find/image', (req, res) => {
  * @apiSampleRequest http://localhost:5050/image/search/one
  * @apiVersion 1.0.0
  */
-router.get('/search/one', (req, res) => {
-    // 通过图片名称，水位，波浪来向，堤坝布置查询图片
-    const {
-        name,
-    } = req.query
-    ImageModel.findOne({
-        where: {
-            name: name
-        }
-    }).then(img => {
-        res.send({
-            status: 200,
-            msg: '查询图片成功.',
-            data: img
-        })
-    }).catch(error => {
-        console.error('查询图片失败.', error)
-        res.send({
-            status: 400,
-            msg: '查询图片失败.'
-        })
+router.get("/search/one", (req, res) => {
+  // 通过图片名称，水位，波浪来向，堤坝布置查询图片
+  const { name } = req.query;
+  ImageModel.findOne({
+    where: {
+      name: name,
+    },
+  })
+    .then((img) => {
+      res.send({
+        status: 200,
+        msg: "查询图片成功.",
+        data: img,
+      });
     })
-})
+    .catch((error) => {
+      console.error("查询图片失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询图片失败.",
+      });
+    });
+});
 
 module.exports = router;
