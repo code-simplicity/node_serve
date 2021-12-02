@@ -229,11 +229,14 @@ router.post("/update", upload.single("image"), (req, res) => {
   // 修改图片路径
   PortMapModel.update(
     {
+      url: `${file.originalname}`,
       path:
         "/UploadImages/port-map/" +
         utils.getNowFormatDate() +
         "/" +
         file.originalname,
+      type: fileTyppe,
+      name: `${file.originalname}`,
     },
     {
       where: {
