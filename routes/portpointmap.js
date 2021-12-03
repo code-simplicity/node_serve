@@ -125,6 +125,8 @@ router.post("/upload", upload.single("image"), (req, res) => {
  * @apiDescription 搜索图片
  * @apiName 搜索图片
  * @apiGroup PortPointMap
+ * @apiBody {String} pageNum 页码
+ * @apiBody {String} pageSize 每页数量
  * @apiBody {String} water_level 水位高低
  * @apiBody {String} wave_direction 波浪方向
  * @apiBody {String} embank_ment 外堤布置
@@ -140,18 +142,19 @@ router.post("/upload", upload.single("image"), (req, res) => {
  */
 router.post("/search", (req, res) => {
   // 通过水位，波浪来向，堤坝布置查询图片
-  const { water_level, wave_direction, embank_ment } = req.body;
-  PortPointMapModel.findOne({
+  const { water_level, wave_direction, embank_ment, pageNum, pageSize } =
+    req.body;
+  PortPointMapModel.findAll({
     where: {
-      [Op.and]: [
+      [Op.or]: [
         {
-          water_level: water_level,
+          water_level: water_level ? water_level : "",
         },
         {
-          wave_direction: wave_direction,
+          wave_direction: wave_direction ? wave_direction : "",
         },
         {
-          embank_ment: embank_ment,
+          embank_ment: embank_ment ? embank_ment : "",
         },
       ],
     },
@@ -161,7 +164,7 @@ router.post("/search", (req, res) => {
         res.send({
           status: 200,
           msg: "查询港口点位图成功.",
-          data: img,
+          data: utils.pageFilter(img, pageNum, pageSize),
         });
       } else {
         res.send({

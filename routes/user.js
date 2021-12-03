@@ -315,7 +315,7 @@ router.post("/user/list", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/user/list/search", (req, res) => {
-  const { user } = req.query;
+  const { user, pageNum, pageSize } = req.query;
   // 通过id或者user_name查询
   UserModel.findAll({
     where: {
@@ -338,7 +338,7 @@ router.get("/user/list/search", (req, res) => {
         res.send({
           status: 200,
           msg: "查询用户成功.",
-          data: user,
+          data: utils.pageFilter(user, pageNum, pageSize),
         });
       }
     })
