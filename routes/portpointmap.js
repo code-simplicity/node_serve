@@ -207,11 +207,19 @@ router.post("/findAll", async (req, res) => {
       order: [["create_time", "DESC"]],
     });
     if (result.length > 0) {
-      res.send({
-        status: 200,
-        msg: "查询成功.",
-        data: utils.pageFilter(result, pageNum, pageSize),
-      });
+      if (pageNum && pageSize) {
+        res.send({
+          status: 200,
+          msg: "查询成功.",
+          data: utils.pageFilter(result, pageNum, pageSize),
+        });
+      } else {
+        res.send({
+          status: 200,
+          msg: "查询成功.",
+          data: result,
+        });
+      }
     }
   } catch (error) {
     console.error("查询失败.", error);

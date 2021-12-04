@@ -8,6 +8,8 @@ const {
 const path = require('path')
 const fs = require('fs')
 
+const utils = require("../utils/utils");
+
 // 导入暴露的模型
 const ChooseModel = require('../models/ChooseModel')
 
@@ -69,7 +71,7 @@ router.post('/add', (req, res) => {
 router.get('/delete', (req, res) => {
     const {
         id
-    } = req.body
+    } = req.query
     ChooseModel.destroy({
         where: {
             id
@@ -108,10 +110,11 @@ router.get('/delete', (req, res) => {
 router.post('/update', (req, res) => {
     const {
         id,
-        content
+        content,
+        category
     } = req.body
     ChooseModel.update({
-        content
+        content,category
     }, {
         where: {
             id
@@ -120,7 +123,6 @@ router.post('/update', (req, res) => {
         res.send({
             status: 200,
             msg: '修改内容成功.',
-            data: content
         })
     }).catch(error => {
         console.error('修改内容失败.', error)
@@ -171,7 +173,7 @@ router.get('/search', (req, res) => {
 })
 
 /**
- * @api {get} /choose/findAll 获取所有内容
+ * @api {post} /choose/findAll 获取所有内容
  * @apiDescription 获取所有内容
  * @apiName 获取所有内容
  * @apiGroup Choose
@@ -185,14 +187,9 @@ router.get('/search', (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/findAll
  * @apiVersion 1.0.0
  */
-router.get('/findAll', (req, res) => {
-    // const {
-    //     category
-    // } = req.query
+router.post('/findAll', (req, res) => {
+    const {pageNum, pageSize} = req.body
     ChooseModel.findAll({
-        // where: {
-        //     category
-        // },
         order: [
             ['create_time']
         ]
@@ -200,7 +197,7 @@ router.get('/findAll', (req, res) => {
         res.send({
             status: 200,
             msg: '查询内容成功.',
-            data: content
+            data: utils.pageFilter(content, pageNum, pageSize),
         })
     }).catch(error => {
         console.error('查询内容失败.', error)
