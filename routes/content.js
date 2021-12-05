@@ -66,7 +66,7 @@ router.post("/add/choose_id", (req, res) => {
   const { choose_id, content } = req.body;
   ContentModel.create({
     content: content,
-    choose_id: choose_id ? choose_id : "",
+    choose_id: choose_id,
   })
     .then((content) => {
       res.send({
@@ -107,10 +107,17 @@ router.get("/delete", (req, res) => {
     },
   })
     .then((content) => {
-      res.send({
-        status: 200,
-        msg: "删除内容成功.",
-      });
+      if (content) {
+        res.send({
+          status: 200,
+          msg: "删除内容成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "删除内容失败，请重试！",
+        });
+      }
     })
     .catch((error) => {
       console.error("删除内容失败.", error);
@@ -206,11 +213,13 @@ router.get("/search", (req, res) => {
 });
 
 /**
- * @api {get} /content/search/choose_id 根据选择表id查询对应内容
+ * @api {post} /content/search/choose_id 根据选择表id查询对应内容
  * @apiDescription 根据选择表id查询对应内容
  * @apiName 根据选择表id查询对应内容
  * @apiGroup Content
- * @apiParam {String} choose_id choose_id选择表id
+ * @apiBody {String} pageNum 页码
+ * @apiBody {String} pageSize 每页数量
+ * @apiBody {String} choose_id choose_id选择表id
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
  *  {
@@ -221,19 +230,21 @@ router.get("/search", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/search/choose_id
  * @apiVersion 1.0.0
  */
-router.get("/search/choose_id", (req, res) => {
-  const { choose_id } = req.query;
-  ContentModel.findOne({
+router.post("/search/choose_id", (req, res) => {
+  const { choose_id, pageNum, pageSize } = req.body;
+  ContentModel.findAll({
     where: {
-      choose_id,
+      choose_id: choose_id,
     },
   })
     .then((content) => {
-      res.send({
-        status: 200,
-        msg: "查询内容成功.",
-        data: content,
-      });
+      if (content) {
+        res.send({
+          status: 200,
+          msg: "查询内容成功.",
+          data: utils.pageFilter(content, pageNum, pageSize),
+        });
+      }
     })
     .catch((error) => {
       console.error("查询内容失败.", error);
@@ -260,7 +271,7 @@ router.get("/search/choose_id", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/findAll", (req, res) => {
-  const { pageNum, pageSize } = req.body;
+  const { pageNum, pageSize, choose_id } = req.body;
   ContentModel.findAll({
     order: [["create_time"]],
   })

@@ -20,7 +20,6 @@ const PointModel = sequelizedb.define(
     },
     port_point_map_id: {
       type: DataTypes.UUID,
-      defaultValue: Sequelize.UUIDV4,
       foreignKey: true,
       references: {
         model: PortPointMapModel,

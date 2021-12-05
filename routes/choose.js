@@ -1,17 +1,15 @@
 // 选择列表
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {
-    Op
-} = require("sequelize");
+const { Op } = require("sequelize");
 
-const path = require('path')
-const fs = require('fs')
+const path = require("path");
+const fs = require("fs");
 
 const utils = require("../utils/utils");
 
 // 导入暴露的模型
-const ChooseModel = require('../models/ChooseModel')
+const ChooseModel = require("../models/ChooseModel");
 
 /**
  * @api {post} /choose/add 添加选择数据
@@ -30,28 +28,27 @@ const ChooseModel = require('../models/ChooseModel')
  * @apiSampleRequest http://localhost:5050/choose/add
  * @apiVersion 1.0.0
  */
-router.post('/add', (req, res) => {
-    const {
-        content,
-        category
-    } = req.body
-    ChooseModel.create({
-        category: category,
-        content: content
-    }).then(content => {
-        res.send({
-            status: 200,
-            msg: '添加内容成功.',
-            data: content
-        })
-    }).catch(error => {
-        console.error('添加内容失败.', error)
-        res.send({
-            status: 400,
-            msg: '添加内容失败，请重试！'
-        })
+router.post("/add", (req, res) => {
+  const { content, category } = req.body;
+  ChooseModel.create({
+    category: category,
+    content: content,
+  })
+    .then((content) => {
+      res.send({
+        status: 200,
+        msg: "添加内容成功.",
+        data: content,
+      });
     })
-})
+    .catch((error) => {
+      console.error("添加内容失败.", error);
+      res.send({
+        status: 400,
+        msg: "添加内容失败，请重试！",
+      });
+    });
+});
 
 /**
  * @api {get} /choose/delete 删除选择数据
@@ -68,27 +65,27 @@ router.post('/add', (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/delete
  * @apiVersion 1.0.0
  */
-router.get('/delete', (req, res) => {
-    const {
-        id
-    } = req.query
-    ChooseModel.destroy({
-        where: {
-            id
-        }
-    }).then(content => {
-        res.send({
-            status: 200,
-            msg: '删除内容成功.',
-        })
-    }).catch(error => {
-        console.error('删除内容失败.', error)
-        res.send({
-            status: 400,
-            msg: '删除内容失败，请重试！'
-        })
+router.get("/delete", (req, res) => {
+  const { id } = req.query;
+  ChooseModel.destroy({
+    where: {
+      id,
+    },
+  })
+    .then((content) => {
+      res.send({
+        status: 200,
+        msg: "删除内容成功.",
+      });
     })
-})
+    .catch((error) => {
+      console.error("删除内容失败.", error);
+      res.send({
+        status: 400,
+        msg: "删除内容失败，请重试！",
+      });
+    });
+});
 
 /**
  * @api {post} /choose/update 修改选择数据
@@ -107,31 +104,33 @@ router.get('/delete', (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/update
  * @apiVersion 1.0.0
  */
-router.post('/update', (req, res) => {
-    const {
+router.post("/update", (req, res) => {
+  const { id, content, category } = req.body;
+  ChooseModel.update(
+    {
+      content,
+      category,
+    },
+    {
+      where: {
         id,
-        content,
-        category
-    } = req.body
-    ChooseModel.update({
-        content,category
-    }, {
-        where: {
-            id
-        }
-    }).then(content => {
-        res.send({
-            status: 200,
-            msg: '修改内容成功.',
-        })
-    }).catch(error => {
-        console.error('修改内容失败.', error)
-        res.send({
-            status: 400,
-            msg: '修改内容失败，请重试！'
-        })
+      },
+    }
+  )
+    .then((content) => {
+      res.send({
+        status: 200,
+        msg: "修改内容成功.",
+      });
     })
-})
+    .catch((error) => {
+      console.error("修改内容失败.", error);
+      res.send({
+        status: 400,
+        msg: "修改内容失败，请重试！",
+      });
+    });
+});
 
 /**
  * @api {get} /choose/search 查询选择数据
@@ -149,28 +148,35 @@ router.post('/update', (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/search
  * @apiVersion 1.0.0
  */
-router.get('/search', (req, res) => {
-    const {
-        id
-    } = req.query
-    ChooseModel.findOne({
-        where: {
-            id
-        }
-    }).then(content => {
+router.get("/search", (req, res) => {
+  const { id } = req.query;
+  ChooseModel.findOne({
+    where: {
+      id,
+    },
+  })
+    .then((content) => {
+      if (content) {
         res.send({
-            status: 200,
-            msg: '查询内容成功.',
-            data: content
-        })
-    }).catch(error => {
-        console.error('查询内容失败.', error)
+          status: 200,
+          msg: "查询内容成功.",
+          data: content,
+        });
+      } else {
         res.send({
-            status: 400,
-            msg: '查询内容失败，请重试！'
-        })
+          status: 400,
+          msg: "查询内容失败，请重试！",
+        });
+      }
     })
-})
+    .catch((error) => {
+      console.error("查询内容失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询内容失败，请重试！",
+      });
+    });
+});
 
 /**
  * @api {post} /choose/findAll 获取所有内容
@@ -187,25 +193,25 @@ router.get('/search', (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/findAll
  * @apiVersion 1.0.0
  */
-router.post('/findAll', (req, res) => {
-    const {pageNum, pageSize} = req.body
-    ChooseModel.findAll({
-        order: [
-            ['create_time']
-        ]
-    }).then(content => {
-        res.send({
-            status: 200,
-            msg: '查询内容成功.',
-            data: utils.pageFilter(content, pageNum, pageSize),
-        })
-    }).catch(error => {
-        console.error('查询内容失败.', error)
-        res.send({
-            status: 400,
-            msg: '查询内容失败，请重试！'
-        })
+router.post("/findAll", (req, res) => {
+  const { pageNum, pageSize } = req.body;
+  ChooseModel.findAll({
+    order: [["create_time"]],
+  })
+    .then((content) => {
+      res.send({
+        status: 200,
+        msg: "查询内容成功.",
+        data: utils.pageFilter(content, pageNum, pageSize),
+      });
     })
-})
+    .catch((error) => {
+      console.error("查询内容失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询内容失败，请重试！",
+      });
+    });
+});
 
-module.exports = router
+module.exports = router;
