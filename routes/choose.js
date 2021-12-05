@@ -250,11 +250,6 @@ router.post("/batch/delete", async (req, res) => {
           status: 200,
           msg: "选择批量删除成功.",
         });
-      } else {
-        res.send({
-          status: 400,
-          msg: "选择批量删除失败.",
-        });
       }
     })
     .catch((err) => {

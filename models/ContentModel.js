@@ -20,18 +20,6 @@ const ContentModel = sequelizedb.define(
       unique: true,
       comment: "id",
     },
-    choose_id: {
-      type: DataTypes.UUID,
-      foreignKey: true,
-      references: {
-        model: ChooseModel,
-        key: "id",
-        onDelete: "NO ACTION",
-        onUpdate: "NO ACTION",
-        deferrable: Deferrable.INITIALLY_DEFERRED,
-      },
-      comment: "选择列表id（外键）",
-    },
     content: {
       type: DataTypes.TEXT,
       comment: "内容",
@@ -54,6 +42,16 @@ const ContentModel = sequelizedb.define(
   },
   {}
 );
+
+ChooseModel.hasOne(ContentModel, {
+  foreignKey: {
+    name: "choose_id",
+    comment: "选择列表id（外键）",
+  },
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
+});
+// ContentModel.belongsTo(ChooseModel);
 
 // 向外暴露UserModel
 module.exports = ContentModel;

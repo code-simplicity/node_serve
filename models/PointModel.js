@@ -18,18 +18,6 @@ const PointModel = sequelizedb.define(
       allowNull: false,
       comment: "id",
     },
-    port_point_map_id: {
-      type: DataTypes.UUID,
-      foreignKey: true,
-      references: {
-        model: PortPointMapModel,
-        key: "id",
-        onDelete: "NO ACTION",
-        onUpdate: "NO ACTION",
-        deferrable: Deferrable.INITIALLY_IMMEDIATE,
-      },
-      comment: "港口点位地图表id（外键）",
-    },
     content: {
       type: DataTypes.STRING,
       comment: "点位内容",
@@ -52,5 +40,15 @@ const PointModel = sequelizedb.define(
   },
   {}
 );
+
+PortPointMapModel.hasOne(PointModel, {
+  foreignKey: {
+    name: "port_point_map_id",
+    comment: "港口点位地图表id（外键）",
+  },
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
+});
+// PointModel.belongsTo(PortPointMapModel);
 
 module.exports = PointModel;
