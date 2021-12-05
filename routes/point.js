@@ -146,7 +146,7 @@ router.post("/update", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/search", (req, res) => {
-  const { pageNum , pageSize, port_point_map_id, content } = req.body;
+  const { pageNum, pageSize, port_point_map_id, content } = req.body;
   PointModel.findAll({
     where: {
       [Op.or]: [
@@ -154,9 +154,9 @@ router.post("/search", (req, res) => {
           port_point_map_id: port_point_map_id ? port_point_map_id : "",
         },
         {
-          content: content ? content : ""
-        }
-      ]
+          content: content ? content : "",
+        },
+      ],
     },
     order: [["create_time"]],
   })
@@ -210,6 +210,58 @@ router.post("/findAll", (req, res) => {
       res.send({
         status: 400,
         msg: "获取所有点位图失败.",
+      });
+    });
+});
+
+/**
+ * @api {post} /point/batch/delete 点位图批量删除
+ * @apiDescription 点位图批量删除
+ * @apiName 点位图批量删除
+ * @apiGroup Point
+ * @apiBody {Array} pointIds 点位ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "点位图批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/point/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { pointIds } = req.body;
+  if (!pointIds) {
+    return res.send({
+      status: 400,
+      msg: "pointIds不可以为空",
+    });
+  }
+  await PointModel.destroy({
+    where: {
+      id: {
+        [Op.in]: pointIds,
+      },
+    },
+  })
+    .then((point) => {
+      if (point) {
+        res.send({
+          status: 200,
+          msg: "点位图批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "点位图批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("点位图批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "点位图批量删除失败.",
       });
     });
 });

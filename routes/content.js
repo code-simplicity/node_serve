@@ -291,4 +291,55 @@ router.post("/findAll", (req, res) => {
     });
 });
 
+/**
+ * @api {post} /content/batch/delete 内容批量删除
+ * @apiDescription 内容批量删除
+ * @apiName 内容批量删除
+ * @apiGroup Content
+ * @apiBody {Array} contentIds 内容ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "内容批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/content/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { contentIds } = req.body;
+  if (!contentIds) {
+    return res.send({
+      status: 400,
+      msg: "contentIds不可以为空",
+    });
+  }
+  await ContentModel.destroy({
+    where: {
+      id: {
+        [Op.in]: contentIds,
+      },
+    },
+  })
+    .then((content) => {
+      if (content) {
+        res.send({
+          status: 200,
+          msg: "内容批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "内容批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("内容批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "内容批量删除失败.",
+      });
+    });
+});
 module.exports = router;

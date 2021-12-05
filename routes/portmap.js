@@ -266,4 +266,56 @@ router.post("/update", upload.single("image"), (req, res) => {
     });
 });
 
+/**
+ * @api {post} /portmap/batch/delete 港口地图批量删除
+ * @apiDescription 港口地图批量删除
+ * @apiName 港口地图批量删除
+ * @apiGroup PortMap
+ * @apiBody {Array} portmapIds 港口地图id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "港口地图批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/portmap/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { portmapIds } = req.body;
+  if (!portmapIds) {
+    return res.send({
+      status: 400,
+      msg: "portmapIds不可以为空",
+    });
+  }
+  await PortMapModel.destroy({
+    where: {
+      id: {
+        [Op.in]: portmapIds,
+      },
+    },
+  })
+    .then((portmap) => {
+      if (portmap) {
+        res.send({
+          status: 200,
+          msg: "港口地图批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "港口地图批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("港口地图批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "港口地图批量删除失败.",
+      });
+    });
+});
+
 module.exports = router;

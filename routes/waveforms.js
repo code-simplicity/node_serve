@@ -277,4 +277,56 @@ router.post("/findAll", async (req, res) => {
     });
 });
 
+/**
+ * @api {post} /waveforms/batch/delete 波形图批量删除
+ * @apiDescription 波形图批量删除
+ * @apiName 波形图批量删除
+ * @apiGroup WaveForms
+ * @apiBody {Array} waveformsIds 波形图ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "波形图批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/waveforms/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { waveformsIds } = req.body;
+  if (!waveformsIds) {
+    return res.send({
+      status: 400,
+      msg: "waveformsIds不可以为空",
+    });
+  }
+  await WaveFormsModel.destroy({
+    where: {
+      id: {
+        [Op.in]: waveformsIds,
+      },
+    },
+  })
+    .then((result) => {
+      if (result) {
+        res.send({
+          status: 200,
+          msg: "波形图批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "波形图批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("波形图批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "波形图批量删除失败.",
+      });
+    });
+});
+
 module.exports = router;

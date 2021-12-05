@@ -348,7 +348,7 @@ router.post("/update", upload.single("image"), async (req, res) => {
       if (!img) {
         res.send({
           status: 400,
-          msg: "修改图片信息失败.",
+          msg: "修改港口点位图信息失败.",
         });
       } else {
         res.send({
@@ -362,6 +362,58 @@ router.post("/update", upload.single("image"), async (req, res) => {
       res.send({
         status: 400,
         msg: "修改图片信息失败.",
+      });
+    });
+});
+
+/**
+ * @api {post} /portpointmap/batch/delete 港口点位图批量删除
+ * @apiDescription 港口点位图批量删除
+ * @apiName 港口点位图批量删除
+ * @apiGroup PortPointMap
+ * @apiBody {Array} portpointmapIds 港口点位ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "视视频删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/portpointmap/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { portpointmapIds } = req.body;
+  if (!portpointmapIds) {
+    return res.send({
+      status: 400,
+      msg: "portpointmapIds不可以为空",
+    });
+  }
+  await PortPointMapModel.destroy({
+    where: {
+      id: {
+        [Op.in]: portpointmapIds,
+      },
+    },
+  })
+    .then((img) => {
+      if (img) {
+        res.send({
+          status: 200,
+          msg: "港口点位图批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "港口点位图批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("港口点位图批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "港口点位图批量删除失败.",
       });
     });
 });

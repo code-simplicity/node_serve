@@ -285,4 +285,56 @@ router.get("/search/one", (req, res) => {
     });
 });
 
+/**
+ * @api {post} /batch/delete 视频批量删除
+ * @apiDescription 视频批量删除
+ * @apiName 视频批量删除
+ * @apiGroup Video
+ * @apiBody {Array} ids 堤坝布置位置
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "视视频删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/video/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { videoIds } = req.body;
+  if (!videoIds) {
+    return res.send({
+      status: 400,
+      msg: "ids不可以为空",
+    });
+  }
+  await VideoModel.destroy({
+    where: {
+      id: {
+        [Op.in]: videoIds,
+      },
+    },
+  })
+    .then((video) => {
+      if (video) {
+        res.send({
+          status: 200,
+          msg: "视频删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "视频删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("视频删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "视频删除失败.",
+      });
+    });
+});
+
 module.exports = router;

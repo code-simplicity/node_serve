@@ -179,9 +179,9 @@ router.get("/search", (req, res) => {
 });
 
 /**
- * @api {post} /choose/findAll 获取所有内容
- * @apiDescription 获取所有内容
- * @apiName 获取所有内容
+ * @api {post} /choose/findAll 获取所有选择
+ * @apiDescription 获取所有选择
+ * @apiName 获取所有选择
  * @apiGroup Choose
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
@@ -210,6 +210,58 @@ router.post("/findAll", (req, res) => {
       res.send({
         status: 400,
         msg: "查询内容失败，请重试！",
+      });
+    });
+});
+
+/**
+ * @api {post} /choose/batch/delete 选择批量删除
+ * @apiDescription 选择批量删除
+ * @apiName 选择批量删除
+ * @apiGroup Choose
+ * @apiBody {Array} chooseIds 选择的ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "选择批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/choose/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/batch/delete", async (req, res) => {
+  const { chooseIds } = req.body;
+  if (!chooseIds) {
+    return res.send({
+      status: 400,
+      msg: "chooseIds不可以为空",
+    });
+  }
+  await ChooseModel.destroy({
+    where: {
+      id: {
+        [Op.in]: chooseIds,
+      },
+    },
+  })
+    .then((content) => {
+      if (content) {
+        res.send({
+          status: 200,
+          msg: "选择批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "选择批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("选择批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "选择批量删除失败.",
       });
     });
 });

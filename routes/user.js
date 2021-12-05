@@ -453,4 +453,56 @@ router.post("/user/add/score", (req, res) => {
     });
 });
 
+/**
+ * @api {post} /user/batch/delete 用户批量删除
+ * @apiDescription 用户批量删除
+ * @apiName 用户批量删除
+ * @apiGroup User
+ * @apiBody {Array} userIds 用户的ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "视视频删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/user/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/user/batch/delete", async (req, res) => {
+  const { userIds } = req.body;
+  if (!userIds) {
+    return res.send({
+      status: 400,
+      msg: "userIds不可以为空",
+    });
+  }
+  await UserModel.destroy({
+    where: {
+      id: {
+        [Op.in]: userIds,
+      },
+    },
+  })
+    .then((user) => {
+      if (user) {
+        res.send({
+          status: 200,
+          msg: "用户批量删除成功.",
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "用户批量删除失败.",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("用户批量删除失败.", err);
+      res.send({
+        status: 400,
+        msg: "用户批量删除失败.",
+      });
+    });
+});
+
 module.exports = router;
