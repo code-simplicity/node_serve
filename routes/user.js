@@ -207,6 +207,7 @@ router.get("/user/info", async (req, res) => {
         user_name: userInfo.user_name,
         id: userInfo.id,
         roles: userInfo.roles,
+        score: userInfo.score,
         create_time: userInfo.create_time,
         update_time: userInfo.update_time,
       };

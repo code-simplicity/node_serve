@@ -146,7 +146,7 @@ router.post("/search", (req, res) => {
     req.body;
   PortPointMapModel.findAll({
     where: {
-      [Op.or]: [
+      [Op.and]: [
         {
           water_level: water_level ? water_level : "",
         },

@@ -240,38 +240,46 @@ router.get("/search/point_id", (req, res) => {
 });
 
 /**
- * @api {get} /wavestats/search/all  查询波形统计图
- * @apiDescription 查询波形统计图
- * @apiName 查询波形统计图
+ * @api {get} /wavestats/findAll 获取所有波形统计图
+ * @apiDescription 获取所有波形统计图
+ * @apiName 获取所有波形统计图
  * @apiGroup WaveStats
- * @apiBody {String} point_id 点位图id（外键）
+ * @apiBody {String} pageNum 页码
+ * @apiBody {String} pageSize 数量
  * @apiSuccess {json} result
  * @apiSuccessExample {json} Success-Response:
  *  {
  *      "status" : "200",
- *      "msg": "图片上传服务器成功.",
+ *      "msg": "获取波形统计图成功.",
  *      "data": img
  *  }
- * @apiSampleRequest http://localhost:5050/wavestats/search/all
+ * @apiSampleRequest http://localhost:5050/wavestats/findAll
  * @apiVersion 1.0.0
  */
-router.get("/search/all", async (req, res) => {
-  const { pageNum, pageSize } = req.query;
+router.post("/findAll", async (req, res) => {
+  const { pageNum, pageSize } = req.body;
   await WaveStatsModel.findAll({
     order: [["create_time", "DESC"]],
   })
     .then((result) => {
-      res.send({
-        status: 200,
-        msg: "查询波形统计图成功.",
-        data: utils.pageFilter(result, pageNum, pageSize),
-      });
+      if (result) {
+        res.send({
+          status: 200,
+          msg: "获取波形统计图成功.",
+          data: utils.pageFilter(result, pageNum, pageSize),
+        });
+      } else {
+        res.send({
+          status: 400,
+          msg: "获取波形统计图失败.",
+        });
+      }
     })
     .catch((error) => {
-      console.error("查询波形统计图失败.", error);
+      console.error("获取波形统计图失败.", error);
       res.send({
         status: 400,
-        msg: "查询波形统计图失败.",
+        msg: "获取波形统计图失败.",
       });
     });
 });
