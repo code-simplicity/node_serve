@@ -288,7 +288,7 @@ router.get("/delete", (req, res) => {
  * @apiSuccessExample {json} Success-Response:
  *  {
  *      "status" : "200",
- *      "msg": "图片上传服务器成功.",
+ *      "msg": "图片修改成功.",
  *      "data": img
  *  }
  * @apiSampleRequest http://localhost:5050/portpointmap/update

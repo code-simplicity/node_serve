@@ -172,24 +172,68 @@ router.get("/delete", (req, res) => {
  * @apiSuccessExample {json} Success-Response:
  *  {
  *      "status" : "200",
- *      "msg": "图片上传服务器成功.",
+ *      "msg": "修改波形图成功.",
  *      "data": img
  *  }
  * @apiSampleRequest http://localhost:5050/waveforms/update
  * @apiVersion 1.0.0
  */
-router.post("/update", (req, res) => {
-  const waveforms = req.body;
-  WaveFormsModel.update(waveforms, {
-    where: {
-      id: waveforms.id,
+router.post("/update", upload.single("image"), (req, res) => {
+  const { point_id, id } = req.body;
+  const file = req.file;
+  if (!point_id) {
+    return res.send({
+      status: 400,
+      msg: "请选择对应的点位id.",
+    });
+  }
+  // 判断是否有文件
+  if (file === null) {
+    return res.send({
+      status: 400,
+      msg: "图片不可以为空.",
+    });
+  }
+  // 获取文件类型是image/png还是其他
+  const fileTyppe = file.mimetype;
+  // 获取图片相关数据，比如文件名称，文件类型
+  const extName = path.extname(file.path);
+  // 去掉拓展名的一点
+  const extNameOut = extName.substr(1);
+  // 返回文件的类型
+  const type = utils.getType(fileTyppe, extNameOut);
+  if (type === null) {
+    res.send({
+      status: 400,
+      msg: "不支持该类型的图片.",
+    });
+    return;
+  }
+  WaveFormsModel.update(
+    {
+      point_id: point_id,
+      url: file.originalname,
+      path:
+        "/UploadImages/wave-forms/" +
+        utils.getNowFormatDate() +
+        "/" +
+        file.originalname,
+      type: fileTyppe,
+      name: file.originalname,
     },
-  })
+    {
+      where: {
+        id: id,
+      },
+    }
+  )
     .then((result) => {
-      res.send({
-        status: 200,
-        msg: "修改波形图成功.",
-      });
+      if (result) {
+        res.send({
+          status: 200,
+          msg: "修改波形图成功.",
+        });
+      }
     })
     .catch((error) => {
       console.error("修改波形图失败.", error);
@@ -250,7 +294,7 @@ router.get("/search/point_id", (req, res) => {
  * @apiSuccessExample {json} Success-Response:
  *  {
  *      "status" : "200",
- *      "msg": "图片上传服务器成功.",
+ *      "msg": "获取波形图成功.",
  *      "data": img
  *  }
  * @apiSampleRequest http://localhost:5050/waveforms/findAll
@@ -328,5 +372,24 @@ router.post("/batch/delete", async (req, res) => {
       });
     });
 });
+
+/**
+ * @api {post} /waveforms/batch/delete 通过点位表id查询波形图外键id
+ * @apiDescription 通过点位表id查询波形图外键id
+ * @apiName 通过点位表id查询波形图外键id
+ * @apiGroup WaveForms
+ * @apiBody {Array} waveformsIds 波形图ids
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "波形图批量删除成功.",
+ *  }
+ * @apiSampleRequest http://localhost:5050/waveforms/batch/delete
+ * @apiVersion 1.0.0
+ */
+router.post("/find/portmappoint_id", (req, res) => {
+
+})
 
 module.exports = router;

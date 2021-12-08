@@ -178,13 +178,55 @@ router.get("/delete", (req, res) => {
  * @apiSampleRequest http://localhost:5050/wavestats/update
  * @apiVersion 1.0.0
  */
-router.post("/update", (req, res) => {
-  const wavestats = req.body;
-  WaveStatsModel.update(wavestats, {
-    where: {
-      id: wavestats.id,
+router.post("/update", upload.single("image"), (req, res) => {
+  const { point_id, id } = req.body;
+  const file = req.file;
+  if (!point_id) {
+    return res.send({
+      status: 400,
+      msg: "请选择对应的点位id.",
+    });
+  }
+  // 判断是否有文件
+  if (file === null) {
+    return res.send({
+      status: 400,
+      msg: "图片不可以为空.",
+    });
+  }
+  // 获取文件类型是image/png还是其他
+  const fileTyppe = file.mimetype;
+  // 获取图片相关数据，比如文件名称，文件类型
+  const extName = path.extname(file.path);
+  // 去掉拓展名的一点
+  const extNameOut = extName.substr(1);
+  // 返回文件的类型
+  const type = utils.getType(fileTyppe, extNameOut);
+  if (type === null) {
+    res.send({
+      status: 400,
+      msg: "不支持该类型的图片.",
+    });
+    return;
+  }
+  WaveStatsModel.update(
+    {
+      point_id: point_id,
+      url: file.originalname,
+      path:
+        "/UploadImages/wave-forms/" +
+        utils.getNowFormatDate() +
+        "/" +
+        file.originalname,
+      type: fileTyppe,
+      name: file.originalname,
     },
-  })
+    {
+      where: {
+        id: id,
+      },
+    }
+  )
     .then((result) => {
       res.send({
         status: 200,
