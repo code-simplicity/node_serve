@@ -12,19 +12,23 @@ const multer = require("multer");
 const WaveStatsModel = require("../models/WaveStatsModel");
 
 const utils = require("../utils/utils");
+const { uploadUrl } = require("../config/config");
 
 // 文件上传到服务器的路径,存储在本地的
+
+// 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
+// const dirPath = uploadUrl + "/image/wave-forms/" + utils.getNowFormatDate();
 const dirPath = path.join(
   __dirname,
   "..",
-  "/public/UploadImages/wave-stats/" + utils.getNowFormatDate()
+  "public/uploadUrl/image/wave-stats/" + utils.getNowFormatDate()
 );
 
 // 配置规则 配置目录/日期/原名称.类型
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, function (err) {
+      fs.mkdir(dirPath, { recursive: true }, function (err) {
         if (err) {
           console.log(err);
         } else {
@@ -42,7 +46,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
 });
 
 /**
@@ -94,31 +98,45 @@ router.post("/upload", upload.single("image"), (req, res) => {
     });
     return;
   }
-  WaveStatsModel.create({
-    point_id: point_id,
-    url: file.originalname,
-    path:
-      "/UploadImages/wave-stats/" +
-      utils.getNowFormatDate() +
-      "/" +
-      file.originalname,
-    type: fileTyppe,
-    name: file.originalname,
-  })
-    .then((result) => {
-      res.send({
-        status: 200,
-        msg: "图片上传服务器成功.",
-        data: result,
+  // 先读取这个文件
+  fs.readFile(file.path, "base64", function (err, data) {
+    if (err) {
+      return;
+    } else {
+      fs.writeFile(file.path, data, "base64", function (err) {
+        if (err) {
+          return;
+        } else {
+          console.log("图片写入成功");
+        }
       });
+    }
+  });
+  try {
+    WaveStatsModel.create({
+      point_id: point_id,
+      url: file.originalname,
+      path: file.path,
+      type: fileTyppe,
+      name: file.originalname,
     })
-    .catch((error) => {
-      console.error("图片上传失败.", error);
-      res.send({
-        status: 400,
-        msg: "图片上传失败.",
+      .then((result) => {
+        res.send({
+          status: 200,
+          msg: "图片上传服务器成功.",
+          data: result,
+        });
+      })
+      .catch((error) => {
+        console.error("图片上传失败.", error);
+        res.send({
+          status: 400,
+          msg: "图片上传失败.",
+        });
       });
-    });
+  } catch (error) {
+    console.error(err);
+  }
 });
 
 /**
@@ -374,6 +392,63 @@ router.post("/batch/delete", async (req, res) => {
       res.send({
         status: 400,
         msg: "波形统计图批量删除失败.",
+      });
+    });
+});
+
+/**
+ * @api {get} /wavestats/search 显示图片
+ * @apiDescription 显示图片
+ * @apiName 显示图片
+ * @apiGroup WaveStats
+ * @apiParam {String} id 图片id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询图片成功.",
+ *      "data": img
+ *  }
+ * @apiSampleRequest http://localhost:5050/wavestats/search
+ * @apiVersion 1.0.0
+ */
+router.get("/search", (req, res) => {
+  // 查询图片
+  // 首先查询存储的位置，
+  // 通过文件流的形式将图片读写
+  const { id } = req.query;
+  WaveStatsModel.findOne({
+    where: {
+      id,
+    },
+  })
+    .then((img) => {
+      if (img) {
+        // 设置响应头，告诉浏览器这是图片
+        res.writeHead(200, { "Content-Type": "image/png" });
+        // 创建一个读取图片流
+        const stream = fs.createReadStream(img.path);
+        // 声明一个存储数组
+        const resData = [];
+        if (stream) {
+          stream.on("data", (chunk) => {
+            resData.push(chunk);
+          });
+          stream.on("end", () => {
+            // 把流存储到缓存池
+            const finalData = Buffer.concat(resData);
+            // 响应，写数据
+            res.write(finalData);
+            res.end();
+          });
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("查询波形统计图失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询波形统计图失败.",
       });
     });
 });

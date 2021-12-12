@@ -1,6 +1,6 @@
 const { Sequelize } = require("sequelize");
 // 连接数据库
-const config = require("./config");
+const { config } = require("./config");
 
 // 配置数据库连接
 const sequelizedb = new Sequelize(

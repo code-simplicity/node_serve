@@ -11,10 +11,15 @@ const VideoModel = require("../models/VideoModel");
 const { Op } = require("sequelize");
 
 const utils = require("../utils/utils");
+const { uploadUrl } = require("../config/config");
 
 // 文件上传到服务器的路径,存储在本地的
-const dirPath = path.join(__dirname, "..", "public/video");
-// const publicUrl = path.join(__dirname, '..', 'public')
+// const dirPath = path.join(uploadUrl + "/video/" + utils.getNowFormatDate());
+const dirPath = path.join(
+  __dirname,
+  "..",
+  "public/uploadUrl/video/" + utils.getNowFormatDate()
+);
 
 // 创建图片保存的路径,绝对路径
 // 配置规则 配置目录/类型/原名称.类型
@@ -34,14 +39,12 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     console.log("filename()", file);
-    // const ext = path.extname(file.originalname)
-    // 返回原来的名称
     cb(null, file.originalname);
   },
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
 });
 
 /**
@@ -75,9 +78,23 @@ router.post("/upload", upload.single("video"), (req, res) => {
   }
   // 获取文件类型是video/mp4还是其他
   const fileTyppe = file.mimetype;
+  // 先读取这个文件
+  fs.readFile(file.path, function (err, data) {
+    if (err) {
+      return;
+    } else {
+      fs.writeFile(file.path, data, function (err) {
+        if (err) {
+          return;
+        } else {
+          console.log("视频写入成功");
+        }
+      });
+    }
+  });
   VideoModel.create({
     url: `${file.originalname}`,
-    path: "/video/" + file.originalname,
+    path: file.path,
     type: fileTyppe,
     name: `${file.originalname}`,
     water_level: water_level,
@@ -413,4 +430,51 @@ router.post("/batch/delete", async (req, res) => {
     });
 });
 
+/**
+ * @api {get} /video/search 显示视频
+ * @apiDescription 显示视频
+ * @apiName 显示视频
+ * @apiGroup Video
+ * @apiParam {String} id 视频id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询图片成功.",
+ *      "data": img
+ *  }
+ * @apiSampleRequest http://localhost:5050/video/search
+ * @apiVersion 1.0.0
+ */
+router.get("/search", (req, res) => {
+  // 查询图片
+  // 首先查询存储的位置，
+  // 通过文件流的形式将图片读写
+  const { id } = req.query;
+  VideoModel.findOne({
+    where: {
+      id,
+    },
+  })
+    .then((video) => {
+      if (video) {
+        // 设置响应头，告诉浏览器这是视频
+        let head = {
+          "Content-Type": "video/mp4",
+        };
+        res.writeHead(200, head);
+        // 创建一个读取图片流
+        const stream = fs.createReadStream(video.path);
+        // 使用管道传输视频
+        stream.pipe(res);
+      }
+    })
+    .catch((error) => {
+      console.error("查询视频失败.", error);
+      res.send({
+        status: 400,
+        msg: "查询视频失败.",
+      });
+    });
+});
 module.exports = router;

@@ -1,4 +1,4 @@
-FROM node:lts-alpine
+FROM node:16.13.1
 
 ENV NODE_ENV=production
 
@@ -8,10 +8,11 @@ COPY . /nodeServe
 
 WORKDIR /nodeServe
 
-
 RUN npm config set registry "https://registry.npm.taobao.org/" \
     && npm install
 
+
 EXPOSE 5050
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
+

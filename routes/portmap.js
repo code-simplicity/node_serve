@@ -3,6 +3,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { Op } = require("sequelize");
+const Stream = require("stream");
 
 const router = express.Router();
 
@@ -12,21 +13,19 @@ const multer = require("multer");
 const PortMapModel = require("../models/PortMapModel");
 
 const utils = require("../utils/utils");
+// const { uploadUrl } = require("../config/config");
 
-// 文件上传到服务器的路径,存储在本地的
+// 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
+// const dirPath = uploadUrl + "/image/port-map/" + utils.getNowFormatDate();
 const dirPath = path.join(
   __dirname,
   "..",
-  "/public/UploadImages/port-map/" + utils.getNowFormatDate()
+  "public/uploadUrl/image/port-map/" + utils.getNowFormatDate()
 );
-
-// 存储在服务器上的,/root/docker/node_serve/ImageUpload/
-// const dirPath = path.join('/root/docker/node_serve/ImageUpload/')
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, function (err) {
+      fs.mkdir(dirPath, { recursive: true }, function (err) {
         if (err) {
           console.log(err);
         } else {
@@ -44,7 +43,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
 });
 
 /**
@@ -66,6 +65,7 @@ const upload = multer({
 router.post("/upload", upload.single("image"), (req, res) => {
   // 判断是否有文件
   const file = req.file;
+  console.log("file()", file);
   if (file === null) {
     return res.send({
       status: 400,
@@ -87,30 +87,44 @@ router.post("/upload", upload.single("image"), (req, res) => {
     });
     return;
   }
-  PortMapModel.create({
-    url: `${file.originalname}`,
-    path:
-      "/UploadImages/port-map/" +
-      utils.getNowFormatDate() +
-      "/" +
-      file.originalname,
-    type: fileTyppe,
-    name: `${file.originalname}`,
-  })
-    .then((portmap) => {
-      res.send({
-        status: 200,
-        msg: "港口地图上传成功.",
-        data: portmap,
+  // 先读取这个文件
+  fs.readFile(file.path, "base64", function (err, data) {
+    if (err) {
+      return;
+    } else {
+      fs.writeFile(file.path, data, "base64", function (err) {
+        if (err) {
+          return;
+        } else {
+          console.log("图片写入成功");
+        }
       });
+    }
+  });
+  try {
+    PortMapModel.create({
+      url: `${file.originalname}`,
+      path: file.path,
+      type: fileTyppe,
+      name: `${file.originalname}`,
     })
-    .catch((error) => {
-      console.error("港口地图上传失败.", error);
-      res.send({
-        status: 400,
-        msg: "港口地图上传失败.",
+      .then((portmap) => {
+        res.send({
+          status: 200,
+          msg: "港口地图上传成功.",
+          data: portmap,
+        });
+      })
+      .catch((error) => {
+        console.error("港口地图上传失败.", error);
+        res.send({
+          status: 400,
+          msg: "港口地图上传失败.",
+        });
       });
-    });
+  } catch (error) {
+    console.error(err);
+  }
 });
 
 /**
@@ -316,6 +330,63 @@ router.post("/batch/delete", async (req, res) => {
         msg: "港口地图批量删除失败.",
       });
     });
+});
+
+/**
+ * @api {get} /portmap/search 搜索图片
+ * @apiDescription 搜索图片
+ * @apiName 搜索图片
+ * @apiGroup PortMap
+ * @apiParam {String} id 图片id
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询图片成功.",
+ *      "data": img
+ *  }
+ * @apiSampleRequest http://localhost:5050/portmap/search
+ * @apiVersion 1.0.0
+ */
+router.get("/search", (req, res) => {
+  try {
+    // 查询图片
+    // 首先查询存储的位置，
+    // 通过文件流的形式将图片读写
+    const { id } = req.query;
+    PortMapModel.findOne({
+      where: {
+        id,
+      },
+    }).then((img) => {
+      if (img) {
+        // 设置响应头，告诉浏览器这是图片
+        res.writeHead(200, { "Content-Type": "image/png" });
+        // 创建一个读取图片流
+        const stream = fs.createReadStream(img.path);
+        // 声明一个存储数组
+        const resData = [];
+        if (stream) {
+          stream.on("data", (chunk) => {
+            resData.push(chunk);
+          });
+          stream.on("end", () => {
+            // 把流存储到缓存池
+            const finalData = Buffer.concat(resData);
+            // 响应，写数据
+            res.write(finalData);
+            res.end();
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error("查询港口点位图失败.", error);
+    res.send({
+      status: 400,
+      msg: "查询港口点位图失败.",
+    });
+  }
 });
 
 module.exports = router;

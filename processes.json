@@ -1,0 +1,25 @@
+{
+    "apps": [{
+        "name": "node-serve",
+        "script": "./bin/www.js",
+        "cwd": "./",
+        "log_date_format": "YYYY-MM-DD HH:mm:ss",
+        "error_file": "./logs/err/err.log",
+        "out_file": "./logs/out/out.log",
+        "watch": true,
+        "ignore_watch": [
+            "node_modules",
+            "logs"
+        ],
+        "instances": 1,
+        "min_uptime": "200s",
+        "max_restarts": 10,
+        "max_memory_restart": "10M",
+        "cron_restart": "1 0 * * *",
+        "merge_logs": true,
+        "exec_interpreter": "node",
+        "exec_mode": "fork",
+        "autorestart": true,
+        "vizion": false
+    }]
+}

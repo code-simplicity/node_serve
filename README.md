@@ -582,9 +582,66 @@ module.exports = ContentModel;
 
 
 
+## Node项目配置pm2，解决Node接口异常停止服务的问题
 
+1. 在开发的时候，出现了接口异常，然后服务就停止了，这就不利于维护和开发了，所以我们需要将项目进行热启动，并且还能做日志检测，报错了可以有迹可循
 
+2. 首先就是全局安装pm2项目管理工具
 
+   ```sh
+   npm install pm2
+   ```
+
+3. 接下来就是在我们项目根目录添加一个processes.json的配置文件
+
+   ```json
+   {
+       "apps": [
+       {
+        "name": "node-serve",
+        "cwd": "./logs",
+        "script": "bin/www.js",
+        "log_date_format": "YYYY-MM-DD HH:mm:ss",
+        "error_file": "/var/log/node-app/node-app.stderr.log",
+        "out_file": "log/node-app.stdout.log",
+        "pid_file": "pids/node-geo-api.pid",
+        "instances": 6,
+        "min_uptime": "200s",
+        "max_restarts": 10,
+        "max_memory_restart": "1M",
+        "cron_restart": "1 0 * * *",
+        "watch": false,
+        "merge_logs": true,
+        "exec_interpreter": "node",
+        "exec_mode": "fork",
+        "autorestart": false,
+        "vizion": false
+       }
+       ]
+      }
+   ```
+
+4. 接下来就是在脚手架搭起来的项目中的package.json加入这个配置
+
+   ```json
+    "scripts": {
+       "start": "node ./bin/www",
+       "dev": "nodemon ./bin/www",
+       "pm2":"pm2 start processes.json"
+     },
+   ```
+
+5. 直接使用命令就可以启动项目了
+
+   ```sh
+   npm run pm2
+   ```
+
+6. 这样就完成了pm2对项目奔溃进行热启动了
+
+## 服务器安装Node
+
+1. 首先就是下载Node安装环境，如果服务器下载很慢，那么可以在本地下载好之后通过ftp上传，首先去Nodejs官网下载，具体看这篇文章https://blog.csdn.net/u012570307/article/details/119968668
 
 
 
@@ -1061,4 +1118,137 @@ http://localhost:5050/excel/upload
 ```sh
 npm install winston
 ```
+
+
+
+
+
+## 部署教程
+
+### 部署后端
+
+1. 首先从本地将工程文件拷贝到服务器的指定目录，
+
+2. 第二就是运行Dockerfile文件，这个文件是运行项目的配置文件，我们将文件使用docker容器进行部署，这样就可以配置好了，
+
+3. 在工程根目录下运行，这里要设置一直运行node服务，即使出现异常，那么这个东西也不会挂掉，docker就有这样的一个好处，其实这块可以编写一个docker-compose.yml配置文件进行编写的
+
+   ```sh
+    docker build . -t node-serve
+    docker run -d --restart=always -p 5050:5050 node-serve
+   ```
+
+4. 通过以上命令就可以访问到我们后端接口了，这里可以做一个代理，用来解决跨域的问题，
+
+5. 通过服务器给的ip地址+端口就可以访问到我们的接口服务了
+
+   ```sh
+   http://8.131.240.89:5050/apidoc/index.html
+   ```
+
+6. 到此我们的后端就部署完成了
+
+### 后端部署另外一种方式，采用pm2部署
+
+1. 首先将代码拉取到服务器指定目录，进入到服务器
+
+2. 其次就是安装node环境了，这里我们直接去node.js官网下载好构建的文件，然后配置地址映射，这里就先这样，这里的版本是已经变异好的linux版本，直接拉取就行，如果服务器拉取该包失败，可以从本地通过ftp上传文件到服务器，通过该地址下载 [Node.js下载地址](https://nodejs.org/en/download/) 
+
+   ```
+   wget https://nodejs.org/dist/v16.13.0/node-v16.13.0-linux-x64.tar.xz
+   ```
+
+3. 我们现在直接采用第二种，本地下载上传到f服务器，首先就是通过地址链接，选择linux版本的，
+
+4. 上传之后，在root下创建一个目录,配置node npm cnpm
+
+   ```sh
+   cd root
+   mkdir nodejs
+   cd nodejs
+   #复制这个文件到该目录下
+   mv node-v16.13.0-linux-x64.tar.xz nodejs
+   #解压文件
+   tar xf node-v16.13.0-linux-x64.tar.xz
+   #进入该目录
+   cd node-v16.13.0-linux-x64.tar.xz
+   #配置软链接， node -v
+   ln -s /root/nodejs/node-v16.13.0-linux-x64/bin/node /usr/bin/node
+   # 配置npm
+   ln -s /root/nodejs/node-v16.13.0-linux-x64/bin/npm /usr/bin/npm
+   npm -v
+   #配置cnpm 
+   #首先安装淘宝链接
+   npm install -g cnpm --registry=https://registry.npm.taobao.org
+   ln -s /root/nodejs/node-v14.15.5-linux-x64/bin/cnpm /usr/local/bin/cnpm
+   cnpm -v
+   // 查看版本
+   node -v
+   ```
+
+5. 安装pm2
+
+   ```sh
+   npm install pm2 -g
+   ```
+
+6. 配置pm2软连接
+
+   ```sh
+   ln -s /root/nodejs/node-v16.13.0-linux-x64/bin/pm2 /usr/local/bin/
+   ```
+
+7. pm2就配置好了
+
+8. 接下来就是启动node.js服务了，首先就是在后端目录下
+
+   ```sh
+   npm install
+   #启动node
+   pm2 start bin/www.js
+   ```
+
+9. 这样就部署好后端了，我们通过ip地址+端口就可以访问到我们后端地址了,这个就是后端的接口地址，
+
+   ```http
+   http://8.131.240.89:5000/apidoc/index.html
+   ```
+
+10. 为什么采用pm2呢,因为项目奔溃之后可以进行重启。
+
+11. 最后配置nginx进行反向代理，配置nginx静态资源，走内网穿透
+
+### 部署管理端
+
+1. 首先拷贝工程文件到服务器，然后编写Dockerfile
+
+   ```sh
+   FROM node:15.9.0
+   
+   ENV NODE_ENV=production
+   
+   RUN mkdir -p /graduationProjectAdmin
+   
+   COPY . /graduationProjectAdmin
+   
+   WORKDIR /graduationProjectAdmin
+   
+   RUN npm config set registry "https://registry.npm.taobao.org/" \
+       && npm install --legacy-peer-deps
+   
+   EXPOSE 3333
+   
+   CMD ["npm", "run", "dev"]
+   ```
+
+2. 在工程根目录下运行
+
+   ```sh
+   docker build . -t graduation-project-admin
+   docker run -d --restart=always -p 3333:3333 graduation-project-admin
+   ```
+
+3. 通过以上命令就可以访问到我们后端接口了，这里可以做一个代理，用来解决跨域的问题，
+
+4. 通过服务器给的ip地址+端口就可以访问到我们的接口服务了
 
