@@ -9,7 +9,7 @@ const router = express.Router();
 const multer = require("multer");
 
 const utils = require("../utils/utils");
-const { uploadUrl } = require("../config/config");
+// const { uploadUrl } = require("../config/config");
 
 // 导入暴露的模型
 const PortPointMapModel = require("../models/PortPointMapModel");

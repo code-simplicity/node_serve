@@ -11,7 +11,7 @@ const VideoModel = require("../models/VideoModel");
 const { Op } = require("sequelize");
 
 const utils = require("../utils/utils");
-const { uploadUrl } = require("../config/config");
+// const { uploadUrl } = require("../config/config");
 
 // 文件上传到服务器的路径,存储在本地的
 // const dirPath = path.join(uploadUrl + "/video/" + utils.getNowFormatDate());
@@ -70,7 +70,7 @@ router.post("/upload", upload.single("video"), (req, res) => {
   const { water_level, wave_direction, embank_ment } = req.body;
   const file = req.file;
   console.log(`file`, file);
-  if (file === null) {
+  if (!file) {
     res.send({
       status: 400,
       msg: "视频不能为空.",
@@ -79,29 +79,29 @@ router.post("/upload", upload.single("video"), (req, res) => {
   // 获取文件类型是video/mp4还是其他
   const fileTyppe = file.mimetype;
   // 先读取这个文件
-  fs.readFile(file.path, function (err, data) {
-    if (err) {
-      return;
-    } else {
-      fs.writeFile(file.path, data, function (err) {
-        if (err) {
-          return;
-        } else {
-          console.log("视频写入成功");
-        }
-      });
-    }
-  });
-  VideoModel.create({
-    url: `${file.originalname}`,
-    path: file.path,
-    type: fileTyppe,
-    name: `${file.originalname}`,
-    water_level: water_level,
-    wave_direction: wave_direction,
-    embank_ment: embank_ment,
-  })
-    .then((video) => {
+  // fs.readFile(file.path, "utf-8", function (err, data) {
+  //   if (err) {
+  //     return;
+  //   } else {
+  //     fs.writeFile(file.originalname, "utf-8", data, function (err) {
+  //       if (err) {
+  //         return;
+  //       } else {
+  //         console.log("视频写入成功");
+  //       }
+  //     });
+  //   }
+  // });
+  try {
+    VideoModel.create({
+      url: `${file.originalname}`,
+      path: file.path,
+      type: fileTyppe,
+      name: `${file.originalname}`,
+      water_level: water_level,
+      wave_direction: wave_direction,
+      embank_ment: embank_ment,
+    }).then((video) => {
       if (video) {
         res.send({
           status: 200,
@@ -114,14 +114,14 @@ router.post("/upload", upload.single("video"), (req, res) => {
           msg: "视视频上传失败.",
         });
       }
-    })
-    .catch((error) => {
-      console.error("视频上传失败.", error);
-      res.send({
-        status: 400,
-        msg: "视视频上传失败.",
-      });
     });
+  } catch (error) {
+    console.error("视频上传失败.", error);
+    res.send({
+      status: 400,
+      msg: "视视频上传失败.",
+    });
+  }
 });
 
 /**

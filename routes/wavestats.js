@@ -12,7 +12,7 @@ const multer = require("multer");
 const WaveStatsModel = require("../models/WaveStatsModel");
 
 const utils = require("../utils/utils");
-const { uploadUrl } = require("../config/config");
+// const { uploadUrl } = require("../config/config");
 
 // 文件上传到服务器的路径,存储在本地的
 
