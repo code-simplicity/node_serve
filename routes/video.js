@@ -67,32 +67,18 @@ const upload = multer({
  * @apiVersion 1.0.0
  */
 router.post("/upload", upload.single("video"), (req, res) => {
-  const { water_level, wave_direction, embank_ment } = req.body;
-  const file = req.file;
-  console.log(`file`, file);
-  if (!file) {
-    res.send({
-      status: 400,
-      msg: "视频不能为空.",
-    });
-  }
-  // 获取文件类型是video/mp4还是其他
-  const fileTyppe = file.mimetype;
-  // 先读取这个文件
-  // fs.readFile(file.path, "utf-8", function (err, data) {
-  //   if (err) {
-  //     return;
-  //   } else {
-  //     fs.writeFile(file.originalname, "utf-8", data, function (err) {
-  //       if (err) {
-  //         return;
-  //       } else {
-  //         console.log("视频写入成功");
-  //       }
-  //     });
-  //   }
-  // });
   try {
+    const { water_level, wave_direction, embank_ment } = req.body;
+    const file = req.file;
+    console.log(`file`, file);
+    if (!file) {
+      res.send({
+        status: 400,
+        msg: "视频不能为空.",
+      });
+    }
+    // 获取文件类型是video/mp4还是其他
+    const fileTyppe = file.mimetype;
     VideoModel.create({
       url: `${file.originalname}`,
       path: file.path,

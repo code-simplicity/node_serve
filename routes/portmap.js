@@ -3,7 +3,6 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { Op } = require("sequelize");
-const Stream = require("stream");
 
 const router = express.Router();
 
@@ -16,35 +15,27 @@ const utils = require("../utils/utils");
 // const { uploadUrl } = require("../config/config");
 
 // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
-// const dirPath = uploadUrl + "/image/port-map/" + utils.getNowFormatDate();
-const dirPath = path.join(
-  __dirname,
-  "..",
-  "public/uploadUrl/image/port-map/" + utils.getNowFormatDate()
-);
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, { recursive: true }, function (err) {
-        if (err) {
-          console.log(err);
-        } else {
-          cb(null, dirPath);
-        }
-      });
-    } else {
-      cb(null, dirPath);
-    }
-  },
-  filename: function (req, file, cb) {
-    console.log("filename()", file);
-    cb(null, file.originalname);
-  },
-});
-
-const upload = multer({
-  storage: storage,
-});
+const dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map");
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     if (!fs.existsSync(dirPath)) {
+//       fs.mkdir(dirPath, { recursive: true }, function (err) {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           cb(null, dirPath);
+//         }
+//       });
+//     } else {
+//       cb(null, dirPath);
+//     }
+//   },
+//   filename: function (req, file, cb) {
+//     console.log("filename()", file);
+//     cb(null, file.originalname);
+//   },
+// });
+const upload = multer({ dest: dirPath });
 
 /**
  * @api {post} /portmap/upload 上传港口地图
@@ -63,68 +54,69 @@ const upload = multer({
  * @apiVersion 1.0.0
  */
 router.post("/upload", upload.single("image"), (req, res) => {
+  console.log("file upload :>> ");
+  const { name, total, index, size, hash } = req.body;
   // 判断是否有文件
-  const file = req.file;
-  console.log("file()", file);
-  if (file === null) {
-    return res.send({
+  // 创建临时的文件块
+  const chunksPath = path.join(dirPath, hash, "/");
+  if (!fs.existsSync(chunksPath)) utils.mkdirsSync(chunksPath);
+  // 文件重命名
+  fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
+  res.send({
+    status: 200,
+    msg: "分片文件上传成功",
+  });
+});
+
+// 分片合并
+router.post("/upload/merge_chunks", async (req, res) => {
+  const { size, name, total, hash, type } = req.body;
+  // 根据hash值，获取分片文件。
+  // 创建存储文件
+  // 合并
+  const chunksPath = path.join(dirPath, hash, "/");
+  const filePath = path.join(dirPath, name);
+  // 读取所有的chunks,文件名存储在数组中,
+  const chunks = fs.readdirSync(chunksPath);
+  console.log("chunks", chunks);
+  // 创建文件存储
+  fs.writeFileSync(filePath, "");
+  if (chunks.length !== total || chunks.length === 0) {
+    res.send.end({
       status: 400,
-      msg: "图片不可以为空.",
-    });
-  }
-  // 获取文件类型是image/png还是其他
-  const fileTyppe = file.mimetype;
-  // 获取图片相关数据，比如文件名称，文件类型
-  const extName = path.extname(file.path);
-  // 去掉拓展名的一点
-  const extNameOut = extName.substr(1);
-  // 返回文件的类型
-  const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片.",
+      msg: "切片文件数量不符合",
     });
     return;
   }
-  // 先读取这个文件
-  fs.readFile(file.path, "base64", function (err, data) {
-    if (err) {
-      return;
-    } else {
-      fs.writeFile(file.path, data, "base64", function (err) {
-        if (err) {
-          return;
-        } else {
-          console.log("图片写入成功");
-        }
-      });
-    }
-  });
-  try {
-    PortMapModel.create({
-      url: `${file.originalname}`,
-      path: file.path,
-      type: fileTyppe,
-      name: `${file.originalname}`,
-    })
-      .then((portmap) => {
-        res.send({
-          status: 200,
-          msg: "港口地图上传成功.",
-          data: portmap,
-        });
-      })
-      .catch((error) => {
-        console.error("港口地图上传失败.", error);
-        res.send({
-          status: 400,
-          msg: "港口地图上传失败.",
-        });
-      });
-  } catch (error) {
-    console.error(err);
+  for (let i = 0; i < total; i++) {
+    // 追加写入文件
+    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
+    // 删除本次使用的chunks
+    fs.unlinkSync(chunksPath + hash + "-" + i);
   }
+  // 同步目录
+  fs.rmdirSync(chunksPath);
+  // 保存数据到数据库
+  PortMapModel.create({
+    url: name,
+    path: filePath,
+    type: type,
+    name: name,
+  })
+    .then((portmap) => {
+      res.send({
+        status: 200,
+        msg: "港口地图上传成功.",
+        data: portmap,
+      });
+    })
+    .catch((error) => {
+      console.error("港口地图上传失败.", error);
+      res.send({
+        status: 400,
+        msg: "港口地图上传失败.",
+      });
+    });
 });
 
 /**
@@ -233,7 +225,7 @@ router.post("/update", upload.single("image"), (req, res) => {
   const extNameOut = extName.substr(1);
   // 返回文件的类型
   const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
+  if (!type) {
     res.send({
       status: 400,
       msg: "不支持该类型的图片.",
@@ -244,11 +236,7 @@ router.post("/update", upload.single("image"), (req, res) => {
   PortMapModel.update(
     {
       url: `${file.originalname}`,
-      path:
-        "/UploadImages/port-map/" +
-        utils.getNowFormatDate() +
-        "/" +
-        file.originalname,
+      path: file.path,
       type: fileTyppe,
       name: `${file.originalname}`,
     },

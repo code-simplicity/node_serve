@@ -1,5 +1,17 @@
 const Constants = require("./Constants");
-
+const path = require("path");
+const fs = require("fs-extra");
+// 创建文件夹
+const mkdirsSync = (dirname) => {
+  if (fs.existsSync(dirname)) {
+    return true;
+  } else {
+    if (mkdirsSync(path.dirname(dirname))) {
+      fs.mkdirSync(dirname);
+      return true;
+    }
+  }
+};
 module.exports = {
   // 日期格式化
   dateFormat(str, type) {
@@ -82,4 +94,5 @@ module.exports = {
     if (String(num).length > len) return num;
     return (Array(len).join(0) + num).slice(-len);
   },
+  mkdirsSync,
 };

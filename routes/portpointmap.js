@@ -98,47 +98,30 @@ router.post("/upload", upload.single("image"), (req, res) => {
     });
     return;
   }
-  // 先读取这个文件
-  fs.readFile(file.path, "base64", function (err, data) {
-    if (err) {
-      return;
-    } else {
-      fs.writeFile(file.path, data, "base64", function (err) {
-        if (err) {
-          return;
-        } else {
-          console.log("图片写入成功");
-        }
+
+  PortPointMapModel.create({
+    url: `${file.originalname}`,
+    path: file.path,
+    type: fileTyppe,
+    name: `${file.originalname}`,
+    water_level: water_level,
+    wave_direction: wave_direction,
+    embank_ment: embank_ment,
+  })
+    .then((img) => {
+      res.send({
+        status: 200,
+        msg: "图片上传服务器成功.",
+        data: img,
       });
-    }
-  });
-  try {
-    PortPointMapModel.create({
-      url: `${file.originalname}`,
-      path: file.path,
-      type: fileTyppe,
-      name: `${file.originalname}`,
-      water_level: water_level,
-      wave_direction: wave_direction,
-      embank_ment: embank_ment,
     })
-      .then((img) => {
-        res.send({
-          status: 200,
-          msg: "图片上传服务器成功.",
-          data: img,
-        });
-      })
-      .catch((error) => {
-        console.error("图片上传失败.", error);
-        res.send({
-          status: 400,
-          msg: "图片上传失败.",
-        });
+    .catch((error) => {
+      console.error("图片上传失败.", error);
+      res.send({
+        status: 400,
+        msg: "图片上传失败.",
       });
-  } catch (error) {
-    console.error(err);
-  }
+    });
 });
 
 /**
@@ -348,11 +331,7 @@ router.post("/update", upload.single("image"), async (req, res) => {
   await PortPointMapModel.update(
     {
       url: `${file.originalname}`,
-      path:
-        "/UploadImages/port-point-map/" +
-        utils.getNowFormatDate() +
-        "/" +
-        file.originalname,
+      path: file.path,
       type: fileTyppe,
       name: `${file.originalname}`,
       water_level: water_level,

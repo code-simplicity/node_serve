@@ -231,11 +231,7 @@ router.post("/update", upload.single("image"), (req, res) => {
     {
       point_id: point_id,
       url: file.originalname,
-      path:
-        "/UploadImages/wave-forms/" +
-        utils.getNowFormatDate() +
-        "/" +
-        file.originalname,
+      path: file.path,
       type: fileTyppe,
       name: file.originalname,
     },
