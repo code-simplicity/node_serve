@@ -12,29 +12,9 @@ const multer = require("multer");
 const PortMapModel = require("../models/PortMapModel");
 
 const utils = require("../utils/utils");
-// const { uploadUrl } = require("../config/config");
 
 // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
 const dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map");
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     if (!fs.existsSync(dirPath)) {
-//       fs.mkdir(dirPath, { recursive: true }, function (err) {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           cb(null, dirPath);
-//         }
-//       });
-//     } else {
-//       cb(null, dirPath);
-//     }
-//   },
-//   filename: function (req, file, cb) {
-//     console.log("filename()", file);
-//     cb(null, file.originalname);
-//   },
-// });
 const upload = multer({ dest: dirPath });
 
 /**
@@ -53,15 +33,17 @@ const upload = multer({ dest: dirPath });
  * @apiSampleRequest http://localhost:5050/portmap/upload
  * @apiVersion 1.0.0
  */
-router.post("/upload", upload.single("image"), (req, res) => {
+router.post("/upload", upload.single("image"), async (req, res) => {
   console.log("file upload :>> ");
   const { name, total, index, size, hash } = req.body;
   // 判断是否有文件
   // 创建临时的文件块
   const chunksPath = path.join(dirPath, hash, "/");
-  if (!fs.existsSync(chunksPath)) utils.mkdirsSync(chunksPath);
+  if (!fs.existsSync(chunksPath)) {
+    await utils.mkdirsSync(chunksPath);
+  }
   // 文件重命名
-  fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
+  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
   res.send({
     status: 200,
     msg: "分片文件上传成功",
@@ -135,8 +117,17 @@ router.post("/upload/merge_chunks", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portmap/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
+router.get("/delete", async (req, res) => {
   const { id } = req.query;
+  // 获取路径
+  const data = await PortMapModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的图片
+  fs.unlinkSync(data.path);
+  // 删除数据库字段，
   PortMapModel.destroy({
     where: {
       id: id,

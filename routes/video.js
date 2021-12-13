@@ -11,41 +11,15 @@ const VideoModel = require("../models/VideoModel");
 const { Op } = require("sequelize");
 
 const utils = require("../utils/utils");
-// const { uploadUrl } = require("../config/config");
 
 // 文件上传到服务器的路径,存储在本地的
 // const dirPath = path.join(uploadUrl + "/video/" + utils.getNowFormatDate());
-const dirPath = path.join(
-  __dirname,
-  "..",
-  "public/uploadUrl/video/" + utils.getNowFormatDate()
-);
+
+const dirPath = path.join(__dirname, "..", "public/uploadUrl/video");
+const upload = multer({ dest: dirPath });
 
 // 创建图片保存的路径,绝对路径
 // 配置规则 配置目录/类型/原名称.类型
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, (err) => {
-        if (err) {
-          console.log(err);
-        } else {
-          cb(null, dirPath);
-        }
-      });
-    } else {
-      cb(null, dirPath);
-    }
-  },
-  filename: function (req, file, cb) {
-    console.log("filename()", file);
-    cb(null, file.originalname);
-  },
-});
-
-const upload = multer({
-  storage: storage,
-});
 
 /**
  * @api {post} /video/upload 上传视频到服务器
@@ -66,48 +40,83 @@ const upload = multer({
  * @apiSampleRequest http://localhost:5050/video/upload
  * @apiVersion 1.0.0
  */
-router.post("/upload", upload.single("video"), (req, res) => {
-  try {
-    const { water_level, wave_direction, embank_ment } = req.body;
-    const file = req.file;
-    console.log(`file`, file);
-    if (!file) {
+router.post("/upload", upload.single("video"), async (req, res) => {
+  console.log("file upload :>> ");
+  const { name, total, index, size, hash } = req.body;
+  // 判断是否有文件
+  // 创建临时的文件块
+  const chunksPath = path.join(dirPath, hash, "/");
+  if (!fs.existsSync(chunksPath)) {
+    await utils.mkdirsSync(chunksPath);
+  }
+  // 文件重命名
+  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
+  res.send({
+    status: 200,
+    msg: "分片文件上传成功",
+  });
+});
+
+// 分片合并
+router.post("/upload/merge_chunks", async (req, res) => {
+  const {
+    size,
+    name,
+    total,
+    hash,
+    type,
+    water_level,
+    wave_direction,
+    embank_ment,
+  } = req.body;
+  // 根据hash值，获取分片文件。
+  // 创建存储文件
+  // 合并
+  const chunksPath = path.join(dirPath, hash, "/");
+  const filePath = path.join(dirPath, name);
+  // 读取所有的chunks,文件名存储在数组中,
+  const chunks = fs.readdirSync(chunksPath);
+  console.log("chunks", chunks);
+  // 创建文件存储
+  fs.writeFileSync(filePath, "");
+  if (chunks.length !== total || chunks.length === 0) {
+    res.send.end({
+      status: 400,
+      msg: "切片文件数量不符合",
+    });
+    return;
+  }
+  for (let i = 0; i < total; i++) {
+    // 追加写入文件
+    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
+    // 删除本次使用的chunks
+    fs.unlinkSync(chunksPath + hash + "-" + i);
+  }
+  // 同步目录
+  fs.rmdirSync(chunksPath);
+  // 保存数据到数据库
+  VideoModel.create({
+    url: name,
+    path: filePath,
+    type: type,
+    name: name,
+    water_level: water_level,
+    wave_direction: wave_direction,
+    embank_ment: embank_ment,
+  }).then((video) => {
+    if (video) {
+      res.send({
+        status: 200,
+        msg: "视频上传服务器成功.",
+        data: video,
+      });
+    } else {
       res.send({
         status: 400,
-        msg: "视频不能为空.",
+        msg: "视视频上传失败.",
       });
     }
-    // 获取文件类型是video/mp4还是其他
-    const fileTyppe = file.mimetype;
-    VideoModel.create({
-      url: `${file.originalname}`,
-      path: file.path,
-      type: fileTyppe,
-      name: `${file.originalname}`,
-      water_level: water_level,
-      wave_direction: wave_direction,
-      embank_ment: embank_ment,
-    }).then((video) => {
-      if (video) {
-        res.send({
-          status: 200,
-          msg: "视频上传服务器成功.",
-          data: video,
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "视视频上传失败.",
-        });
-      }
-    });
-  } catch (error) {
-    console.error("视频上传失败.", error);
-    res.send({
-      status: 400,
-      msg: "视视频上传失败.",
-    });
-  }
+  });
 });
 
 /**
@@ -183,8 +192,16 @@ router.post("/serach", (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
+router.get("/delete", async (req, res) => {
   const { id } = req.query;
+  // 获取路径
+  const data = await VideoModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的视频
+  fs.unlinkSync(data.path);
   VideoModel.destroy({
     where: {
       id,

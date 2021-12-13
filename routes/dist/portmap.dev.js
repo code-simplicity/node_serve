@@ -19,30 +19,10 @@ var multer = require("multer"); // 导入暴露的模型
 
 var PortMapModel = require("../models/PortMapModel");
 
-var utils = require("../utils/utils"); // const { uploadUrl } = require("../config/config");
-// 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
+var utils = require("../utils/utils"); // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
 
 
-var dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map"); // const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     if (!fs.existsSync(dirPath)) {
-//       fs.mkdir(dirPath, { recursive: true }, function (err) {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           cb(null, dirPath);
-//         }
-//       });
-//     } else {
-//       cb(null, dirPath);
-//     }
-//   },
-//   filename: function (req, file, cb) {
-//     console.log("filename()", file);
-//     cb(null, file.originalname);
-//   },
-// });
-
+var dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map");
 var upload = multer({
   dest: dirPath
 });
@@ -63,32 +43,51 @@ var upload = multer({
  * @apiVersion 1.0.0
  */
 
-router.post("/upload", upload.single("image"), function (req, res) {
-  console.log("file upload :>> ");
-  var _req$body = req.body,
-      name = _req$body.name,
-      total = _req$body.total,
-      index = _req$body.index,
-      size = _req$body.size,
-      hash = _req$body.hash; // 判断是否有文件
-  // 创建临时的文件块
-
-  var chunksPath = path.join(dirPath, hash, "/");
-  if (!fs.existsSync(chunksPath)) utils.mkdirsSync(chunksPath); // 文件重命名
-
-  fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
-  res.send({
-    status: 200,
-    msg: "分片文件上传成功"
-  });
-}); // 分片合并
-
-router.post("/upload/merge_chunks", function _callee(req, res) {
-  var _req$body2, size, name, total, hash, type, chunksPath, filePath, chunks, i;
+router.post("/upload", upload.single("image"), function _callee(req, res) {
+  var _req$body, name, total, index, size, hash, chunksPath;
 
   return regeneratorRuntime.async(function _callee$(_context) {
     while (1) {
       switch (_context.prev = _context.next) {
+        case 0:
+          console.log("file upload :>> ");
+          _req$body = req.body, name = _req$body.name, total = _req$body.total, index = _req$body.index, size = _req$body.size, hash = _req$body.hash; // 判断是否有文件
+          // 创建临时的文件块
+
+          chunksPath = path.join(dirPath, hash, "/");
+
+          if (fs.existsSync(chunksPath)) {
+            _context.next = 6;
+            break;
+          }
+
+          _context.next = 6;
+          return regeneratorRuntime.awrap(utils.mkdirsSync(chunksPath));
+
+        case 6:
+          _context.next = 8;
+          return regeneratorRuntime.awrap(fs.renameSync(req.file.path, chunksPath + hash + "-" + index));
+
+        case 8:
+          res.send({
+            status: 200,
+            msg: "分片文件上传成功"
+          });
+
+        case 9:
+        case "end":
+          return _context.stop();
+      }
+    }
+  });
+}); // 分片合并
+
+router.post("/upload/merge_chunks", function _callee2(req, res) {
+  var _req$body2, size, name, total, hash, type, chunksPath, filePath, chunks, i;
+
+  return regeneratorRuntime.async(function _callee2$(_context2) {
+    while (1) {
+      switch (_context2.prev = _context2.next) {
         case 0:
           _req$body2 = req.body, size = _req$body2.size, name = _req$body2.name, total = _req$body2.total, hash = _req$body2.hash, type = _req$body2.type; // 根据hash值，获取分片文件。
           // 创建存储文件
@@ -103,7 +102,7 @@ router.post("/upload/merge_chunks", function _callee(req, res) {
           fs.writeFileSync(filePath, "");
 
           if (!(chunks.length !== total || chunks.length === 0)) {
-            _context.next = 9;
+            _context2.next = 9;
             break;
           }
 
@@ -111,7 +110,7 @@ router.post("/upload/merge_chunks", function _callee(req, res) {
             status: 400,
             msg: "切片文件数量不符合"
           });
-          return _context.abrupt("return");
+          return _context2.abrupt("return");
 
         case 9:
           for (i = 0; i < total; i++) {
@@ -145,7 +144,7 @@ router.post("/upload/merge_chunks", function _callee(req, res) {
 
         case 12:
         case "end":
-          return _context.stop();
+          return _context2.stop();
       }
     }
   });
@@ -167,23 +166,48 @@ router.post("/upload/merge_chunks", function _callee(req, res) {
  * @apiVersion 1.0.0
  */
 
-router.get("/delete", function (req, res) {
-  var id = req.query.id;
-  PortMapModel.destroy({
-    where: {
-      id: id
+router.get("/delete", function _callee3(req, res) {
+  var id, data;
+  return regeneratorRuntime.async(function _callee3$(_context3) {
+    while (1) {
+      switch (_context3.prev = _context3.next) {
+        case 0:
+          id = req.query.id; // 获取路径
+
+          _context3.next = 3;
+          return regeneratorRuntime.awrap(PortMapModel.findOne({
+            where: {
+              id: id
+            }
+          }));
+
+        case 3:
+          data = _context3.sent;
+          // 删除存储在磁盘的图片
+          fs.unlinkSync(data.path); // 删除数据库字段，
+
+          PortMapModel.destroy({
+            where: {
+              id: id
+            }
+          }).then(function (portmap) {
+            res.send({
+              status: 200,
+              msg: "港口地图删除成功."
+            });
+          })["catch"](function (error) {
+            console.error("港口地图删除失败.", error);
+            res.send({
+              status: 400,
+              msg: "港口地图删除失败."
+            });
+          });
+
+        case 6:
+        case "end":
+          return _context3.stop();
+      }
     }
-  }).then(function (portmap) {
-    res.send({
-      status: 200,
-      msg: "港口地图删除成功."
-    });
-  })["catch"](function (error) {
-    console.error("港口地图删除失败.", error);
-    res.send({
-      status: 400,
-      msg: "港口地图删除失败."
-    });
   });
 });
 /**
@@ -312,26 +336,26 @@ router.post("/update", upload.single("image"), function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/batch/delete", function _callee2(req, res) {
+router.post("/batch/delete", function _callee4(req, res) {
   var portmapIds;
-  return regeneratorRuntime.async(function _callee2$(_context2) {
+  return regeneratorRuntime.async(function _callee4$(_context4) {
     while (1) {
-      switch (_context2.prev = _context2.next) {
+      switch (_context4.prev = _context4.next) {
         case 0:
           portmapIds = req.body.portmapIds;
 
           if (portmapIds) {
-            _context2.next = 3;
+            _context4.next = 3;
             break;
           }
 
-          return _context2.abrupt("return", res.send({
+          return _context4.abrupt("return", res.send({
             status: 400,
             msg: "portmapIds不可以为空"
           }));
 
         case 3:
-          _context2.next = 5;
+          _context4.next = 5;
           return regeneratorRuntime.awrap(PortMapModel.destroy({
             where: {
               id: _defineProperty({}, Op["in"], portmapIds)
@@ -358,7 +382,7 @@ router.post("/batch/delete", function _callee2(req, res) {
 
         case 5:
         case "end":
-          return _context2.stop();
+          return _context4.stop();
       }
     }
   });

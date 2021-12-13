@@ -363,6 +363,19 @@ router.post("/batch/delete", async (req, res) => {
       msg: "wavestatsIds不可以为空",
     });
   }
+  // 获取路径
+  const data = await WaveStatsModel.findAll({
+    where: {
+      id: {
+        [Op.in]: wavestatsIds,
+      },
+    },
+  });
+  // 批量删除存储在磁盘的图片
+  data.forEach((item) => {
+    fs.unlinkSync(item.path);
+  });
+  // 删除数据库字段
   await WaveStatsModel.destroy({
     where: {
       id: {

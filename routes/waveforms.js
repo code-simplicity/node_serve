@@ -358,6 +358,18 @@ router.post("/batch/delete", async (req, res) => {
       msg: "waveformsIds不可以为空",
     });
   }
+  // 获取路径
+  const data = await WaveFormsModel.findAll({
+    where: {
+      id: {
+        [Op.in]: waveformsIds,
+      },
+    },
+  });
+  // 批量删除存储在磁盘的图片
+  data.forEach((item) => {
+    fs.unlinkSync(item.path);
+  });
   await WaveFormsModel.destroy({
     where: {
       id: {

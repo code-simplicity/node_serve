@@ -9,17 +9,9 @@ const router = express.Router();
 const multer = require("multer");
 
 const utils = require("../utils/utils");
-// const { uploadUrl } = require("../config/config");
 
 // 导入暴露的模型
 const PortPointMapModel = require("../models/PortPointMapModel");
-
-// 文件上传到服务器的路径,存储在本地的
-// const dirPath = path.join(
-//   __dirname,
-//   "..",
-//   "/public/UploadImages/port-point-map/" + utils.getNowFormatDate()
-// );
 
 // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
 
@@ -28,31 +20,9 @@ const PortPointMapModel = require("../models/PortPointMapModel");
 const dirPath = path.join(
   __dirname,
   "..",
-  "public/uploadUrl/image/port-point-map/" + utils.getNowFormatDate()
+  "public/uploadUrl/image/port-point-map"
 );
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, { recursive: true }, function (err) {
-        if (err) {
-          console.log(err);
-        } else {
-          cb(null, dirPath);
-        }
-      });
-    } else {
-      cb(null, dirPath);
-    }
-  },
-  filename: function (req, file, cb) {
-    console.log("filename()", file);
-    cb(null, file.originalname);
-  },
-});
-
-const upload = multer({
-  storage: storage,
-});
+const upload = multer({ dest: dirPath });
 
 /**
  * @api {post} /portpointmap/upload 上传图片到服务器，保留数据在数据库
@@ -73,37 +43,65 @@ const upload = multer({
  * @apiSampleRequest http://localhost:5050/portpointmap/upload
  * @apiVersion 1.0.0
  */
-router.post("/upload", upload.single("image"), (req, res) => {
-  const { water_level, wave_direction, embank_ment } = req.body;
+router.post("/upload", upload.single("image"), async (req, res) => {
+  const { name, total, index, size, hash } = req.body;
   // 判断是否有文件
-  const file = req.file;
-  if (file === null) {
-    return res.send({
-      status: 400,
-      msg: "图片不可以为空.",
-    });
+  // 创建临时的文件块
+  const chunksPath = path.join(dirPath, hash, "/");
+  if (!fs.existsSync(chunksPath)) {
+    await utils.mkdirsSync(chunksPath);
   }
-  // 获取文件类型是image/png还是其他
-  const fileTyppe = file.mimetype;
-  // 获取图片相关数据，比如文件名称，文件类型
-  const extName = path.extname(file.path);
-  // 去掉拓展名的一点
-  const extNameOut = extName.substr(1);
-  // 返回文件的类型
-  const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
-    res.send({
+  // 文件重命名
+  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
+  res.send({
+    status: 200,
+    msg: "分片文件上传成功",
+  });
+});
+
+// 分片合并
+router.post("/upload/merge_chunks", async (req, res) => {
+  const {
+    size,
+    name,
+    total,
+    hash,
+    type,
+    water_level,
+    wave_direction,
+    embank_ment,
+  } = req.body;
+  // 根据hash值，获取分片文件。
+  // 创建存储文件
+  // 合并
+  const chunksPath = path.join(dirPath, hash, "/");
+  const filePath = path.join(dirPath, name);
+  // 读取所有的chunks,文件名存储在数组中,
+  const chunks = fs.readdirSync(chunksPath);
+  console.log("chunks", chunks);
+  // 创建文件存储
+  fs.writeFileSync(filePath, "");
+  if (chunks.length !== total || chunks.length === 0) {
+    res.send.end({
       status: 400,
-      msg: "不支持该类型的图片.",
+      msg: "切片文件数量不符合",
     });
     return;
   }
-
+  for (let i = 0; i < total; i++) {
+    // 追加写入文件
+    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
+    // 删除本次使用的chunks
+    fs.unlinkSync(chunksPath + hash + "-" + i);
+  }
+  // 同步目录
+  fs.rmdirSync(chunksPath);
+  // 保存数据到数据库
   PortPointMapModel.create({
-    url: `${file.originalname}`,
-    path: file.path,
-    type: fileTyppe,
-    name: `${file.originalname}`,
+    url: name,
+    path: filePath,
+    type: type,
+    name: name,
     water_level: water_level,
     wave_direction: wave_direction,
     embank_ment: embank_ment,
@@ -250,8 +248,16 @@ router.post("/findAll", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portpointmap/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
+router.get("/delete", async (req, res) => {
   const { id } = req.query;
+  // 获取路径
+  const data = await PortPointMapModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的图片
+  fs.unlinkSync(data.path);
   PortPointMapModel.destroy({
     where: {
       id: id,
