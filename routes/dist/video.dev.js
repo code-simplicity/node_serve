@@ -380,54 +380,73 @@ router.post("/findAll", function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/update", upload.single("video"), function (req, res) {
-  var _req$body5 = req.body,
-      water_level = _req$body5.water_level,
-      wave_direction = _req$body5.wave_direction,
-      embank_ment = _req$body5.embank_ment,
-      id = _req$body5.id;
-  var file = req.file;
-  console.log("file", file);
+router.post("/update", upload.single("video"), function _callee4(req, res) {
+  var _req$body5, water_level, wave_direction, embank_ment, id, file, data;
 
-  if (file === null) {
-    res.send({
-      status: 400,
-      msg: "视频不能为空."
-    });
-  } // 获取文件类型是video/mp4还是其他
+  return regeneratorRuntime.async(function _callee4$(_context4) {
+    while (1) {
+      switch (_context4.prev = _context4.next) {
+        case 0:
+          _req$body5 = req.body, water_level = _req$body5.water_level, wave_direction = _req$body5.wave_direction, embank_ment = _req$body5.embank_ment, id = _req$body5.id;
+          file = req.file;
+          console.log("file", file);
+
+          if (file === null) {
+            res.send({
+              status: 400,
+              msg: "视频不能为空."
+            });
+          } // 获取路径
 
 
-  var fileTyppe = file.mimetype;
-  VideoModel.update({
-    url: "".concat(file.originalname),
-    path: "/video/" + file.originalname,
-    type: fileTyppe,
-    name: "".concat(file.originalname),
-    water_level: water_level,
-    wave_direction: wave_direction,
-    embank_ment: embank_ment
-  }, {
-    where: {
-      id: id
+          _context4.next = 6;
+          return regeneratorRuntime.awrap(VideoModel.findOne({
+            where: {
+              id: id
+            }
+          }));
+
+        case 6:
+          data = _context4.sent;
+          // 删除存储在磁盘的图片
+          fs.unlinkSync(data.path);
+          VideoModel.update({
+            url: file.originalname,
+            path: file.path,
+            type: file.mimetype,
+            name: file.originalname,
+            water_level: water_level,
+            wave_direction: wave_direction,
+            embank_ment: embank_ment
+          }, {
+            where: {
+              id: id
+            }
+          }).then(function (video) {
+            if (video) {
+              res.send({
+                status: 200,
+                msg: "视频信息修改成功."
+              });
+            } else {
+              res.send({
+                status: 400,
+                msg: "视视信息修改失败."
+              });
+            }
+          })["catch"](function (error) {
+            console.error("视频信息修改失败.", error);
+            res.send({
+              status: 400,
+              msg: "视视信息修改失败."
+            });
+          });
+
+        case 9:
+        case "end":
+          return _context4.stop();
+      }
     }
-  }).then(function (video) {
-    if (video) {
-      res.send({
-        status: 200,
-        msg: "视频信息修改成功."
-      });
-    } else {
-      res.send({
-        status: 400,
-        msg: "视视信息修改失败."
-      });
-    }
-  })["catch"](function (error) {
-    console.error("视频信息修改失败.", error);
-    res.send({
-      status: 400,
-      msg: "视视信息修改失败."
-    });
   });
 });
 /**
@@ -446,26 +465,39 @@ router.post("/update", upload.single("video"), function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/batch/delete", function _callee4(req, res) {
-  var videoIds;
-  return regeneratorRuntime.async(function _callee4$(_context4) {
+router.post("/batch/delete", function _callee5(req, res) {
+  var videoIds, data;
+  return regeneratorRuntime.async(function _callee5$(_context5) {
     while (1) {
-      switch (_context4.prev = _context4.next) {
+      switch (_context5.prev = _context5.next) {
         case 0:
           videoIds = req.body.videoIds;
 
           if (videoIds) {
-            _context4.next = 3;
+            _context5.next = 3;
             break;
           }
 
-          return _context4.abrupt("return", res.send({
+          return _context5.abrupt("return", res.send({
             status: 400,
             msg: "videoIds不可以为空"
           }));
 
         case 3:
-          _context4.next = 5;
+          _context5.next = 5;
+          return regeneratorRuntime.awrap(VideoModel.findAll({
+            where: {
+              id: _defineProperty({}, Op["in"], videoIds)
+            }
+          }));
+
+        case 5:
+          data = _context5.sent;
+          // 删除存储在磁盘的图片
+          data.forEach(function (item) {
+            fs.unlinkSync(item.path);
+          });
+          _context5.next = 9;
           return regeneratorRuntime.awrap(VideoModel.destroy({
             where: {
               id: _defineProperty({}, Op["in"], videoIds)
@@ -490,9 +522,9 @@ router.post("/batch/delete", function _callee4(req, res) {
             });
           }));
 
-        case 5:
+        case 9:
         case "end":
-          return _context4.stop();
+          return _context5.stop();
       }
     }
   });

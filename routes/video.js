@@ -331,7 +331,7 @@ router.post("/findAll", (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/update
  * @apiVersion 1.0.0
  */
-router.post("/update", upload.single("video"), (req, res) => {
+router.post("/update", upload.single("video"), async (req, res) => {
   const { water_level, wave_direction, embank_ment, id } = req.body;
   const file = req.file;
   console.log(`file`, file);
@@ -341,14 +341,20 @@ router.post("/update", upload.single("video"), (req, res) => {
       msg: "视频不能为空.",
     });
   }
-  // 获取文件类型是video/mp4还是其他
-  const fileTyppe = file.mimetype;
+  // 获取路径
+  const data = await VideoModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的图片
+  fs.unlinkSync(data.path);
   VideoModel.update(
     {
-      url: `${file.originalname}`,
-      path: "/video/" + file.originalname,
-      type: fileTyppe,
-      name: `${file.originalname}`,
+      url: file.originalname,
+      path: file.path,
+      type: file.mimetype,
+      name: file.originalname,
       water_level: water_level,
       wave_direction: wave_direction,
       embank_ment: embank_ment,
@@ -404,6 +410,18 @@ router.post("/batch/delete", async (req, res) => {
       msg: "videoIds不可以为空",
     });
   }
+  // 获取路径
+  const data = await VideoModel.findAll({
+    where: {
+      id: {
+        [Op.in]: videoIds,
+      },
+    },
+  });
+  // 删除存储在磁盘的图片
+  data.forEach((item) => {
+    fs.unlinkSync(item.path);
+  });
   await VideoModel.destroy({
     where: {
       id: {

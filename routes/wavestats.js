@@ -155,8 +155,16 @@ router.post("/upload", upload.single("image"), (req, res) => {
  * @apiSampleRequest http://localhost:5050/wavestats/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
+router.get("/delete", async (req, res) => {
   const { id } = req.query;
+  // 获取路径
+  const data = await WaveStatsModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的图片
+  fs.unlinkSync(data.path);
   WaveStatsModel.destroy({
     where: {
       id: id,
@@ -196,7 +204,7 @@ router.get("/delete", (req, res) => {
  * @apiSampleRequest http://localhost:5050/wavestats/update
  * @apiVersion 1.0.0
  */
-router.post("/update", upload.single("image"), (req, res) => {
+router.post("/update", upload.single("image"), async (req, res) => {
   const { point_id, id } = req.body;
   const file = req.file;
   if (!point_id) {
@@ -212,27 +220,20 @@ router.post("/update", upload.single("image"), (req, res) => {
       msg: "图片不可以为空.",
     });
   }
-  // 获取文件类型是image/png还是其他
-  const fileTyppe = file.mimetype;
-  // 获取图片相关数据，比如文件名称，文件类型
-  const extName = path.extname(file.path);
-  // 去掉拓展名的一点
-  const extNameOut = extName.substr(1);
-  // 返回文件的类型
-  const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片.",
-    });
-    return;
-  }
+  // 获取路径
+  const data = await WaveStatsModel.findOne({
+    where: {
+      id,
+    },
+  });
+  // 删除存储在磁盘的图片
+  fs.unlinkSync(data.path);
   WaveStatsModel.update(
     {
       point_id: point_id,
       url: file.originalname,
       path: file.path,
-      type: fileTyppe,
+      type: file.mimetype,
       name: file.originalname,
     },
     {

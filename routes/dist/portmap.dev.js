@@ -246,6 +246,43 @@ router.post("/find", function (req, res) {
     });
   });
 });
+router.post("/update", upload.single("image"), function _callee4(req, res) {
+  var _req$body4, name, total, index, size, hash, chunksPath;
+
+  return regeneratorRuntime.async(function _callee4$(_context4) {
+    while (1) {
+      switch (_context4.prev = _context4.next) {
+        case 0:
+          _req$body4 = req.body, name = _req$body4.name, total = _req$body4.total, index = _req$body4.index, size = _req$body4.size, hash = _req$body4.hash; // 判断是否有文件
+          // 创建临时的文件块
+
+          chunksPath = path.join(dirPath, hash, "/");
+
+          if (fs.existsSync(chunksPath)) {
+            _context4.next = 5;
+            break;
+          }
+
+          _context4.next = 5;
+          return regeneratorRuntime.awrap(utils.mkdirsSync(chunksPath));
+
+        case 5:
+          _context4.next = 7;
+          return regeneratorRuntime.awrap(fs.renameSync(req.file.path, chunksPath + hash + "-" + index));
+
+        case 7:
+          res.send({
+            status: 200,
+            msg: "分片文件上传成功"
+          });
+
+        case 8:
+        case "end":
+          return _context4.stop();
+      }
+    }
+  });
+});
 /**
  * @api {post} /portmap/update 修改港口地图
  * @apiDescription 修改港口地图
@@ -261,63 +298,89 @@ router.post("/find", function (req, res) {
  * @apiSampleRequest http://localhost:5050/portmap/update
  * @apiVersion 1.0.0
  */
+// 分片合并
 
-router.post("/update", upload.single("image"), function (req, res) {
-  var id = req.body.id;
-  var file = req.file;
+router.post("/update/merge_chunks", function _callee5(req, res) {
+  var _req$body5, size, name, total, hash, type, id, chunksPath, filePath, chunks, i, data;
 
-  if (file === null) {
-    return res.send({
-      status: 400,
-      msg: "图片不可以为空."
-    });
-  } // 获取文件类型是image/png还是其他
+  return regeneratorRuntime.async(function _callee5$(_context5) {
+    while (1) {
+      switch (_context5.prev = _context5.next) {
+        case 0:
+          _req$body5 = req.body, size = _req$body5.size, name = _req$body5.name, total = _req$body5.total, hash = _req$body5.hash, type = _req$body5.type, id = _req$body5.id; // 根据hash值，获取分片文件。
+          // 创建存储文件
+          // 合并
+
+          chunksPath = path.join(dirPath, hash, "/");
+          filePath = path.join(dirPath, name); // 读取所有的chunks,文件名存储在数组中,
+
+          chunks = fs.readdirSync(chunksPath);
+          console.log("chunks", chunks); // 创建文件存储
+
+          fs.writeFileSync(filePath, "");
+
+          if (!(chunks.length !== total || chunks.length === 0)) {
+            _context5.next = 9;
+            break;
+          }
+
+          res.send.end({
+            status: 400,
+            msg: "切片文件数量不符合"
+          });
+          return _context5.abrupt("return");
+
+        case 9:
+          for (i = 0; i < total; i++) {
+            // 追加写入文件
+            fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i)); // 删除本次使用的chunks
+
+            fs.unlinkSync(chunksPath + hash + "-" + i);
+          } // 同步目录
 
 
-  var fileTyppe = file.mimetype; // 获取图片相关数据，比如文件名称，文件类型
+          fs.rmdirSync(chunksPath); // 先获取到原来的，再删除
 
-  var extName = path.extname(file.path); // 去掉拓展名的一点
+          _context5.next = 13;
+          return regeneratorRuntime.awrap(PortMapModel.findOne({
+            where: {
+              id: id
+            }
+          }));
 
-  var extNameOut = extName.substr(1); // 返回文件的类型
+        case 13:
+          data = _context5.sent;
+          fs.unlinkSync(data.path); // 再修改相关信息
 
-  var type = utils.getType(fileTyppe, extNameOut);
+          PortMapModel.update({
+            url: name,
+            path: filePath,
+            type: type,
+            name: name
+          }, {
+            where: {
+              id: id
+            }
+          }).then(function (portmap) {
+            if (portmap) {
+              res.send({
+                status: 200,
+                msg: "港口地图修改成功."
+              });
+            }
+          })["catch"](function (error) {
+            console.error("港口地图修改失败.", error);
+            res.send({
+              status: 200,
+              msg: "港口地图修改失败."
+            });
+          });
 
-  if (!type) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片."
-    });
-    return false;
-  } // 修改图片路径
-
-
-  PortMapModel.update({
-    url: "".concat(file.originalname),
-    path: file.path,
-    type: fileTyppe,
-    name: "".concat(file.originalname)
-  }, {
-    where: {
-      id: id
+        case 16:
+        case "end":
+          return _context5.stop();
+      }
     }
-  }).then(function (portmap) {
-    if (portmap) {
-      res.send({
-        status: 200,
-        msg: "港口地图修改成功."
-      });
-    } else {
-      res.send({
-        status: 400,
-        msg: "港口地图修改失败."
-      });
-    }
-  })["catch"](function (error) {
-    console.error("港口地图修改失败.", error);
-    res.send({
-      status: 200,
-      msg: "港口地图修改失败."
-    });
   });
 });
 /**
@@ -336,26 +399,26 @@ router.post("/update", upload.single("image"), function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/batch/delete", function _callee4(req, res) {
+router.post("/batch/delete", function _callee6(req, res) {
   var portmapIds;
-  return regeneratorRuntime.async(function _callee4$(_context4) {
+  return regeneratorRuntime.async(function _callee6$(_context6) {
     while (1) {
-      switch (_context4.prev = _context4.next) {
+      switch (_context6.prev = _context6.next) {
         case 0:
           portmapIds = req.body.portmapIds;
 
           if (portmapIds) {
-            _context4.next = 3;
+            _context6.next = 3;
             break;
           }
 
-          return _context4.abrupt("return", res.send({
+          return _context6.abrupt("return", res.send({
             status: 400,
             msg: "portmapIds不可以为空"
           }));
 
         case 3:
-          _context4.next = 5;
+          _context6.next = 5;
           return regeneratorRuntime.awrap(PortMapModel.destroy({
             where: {
               id: _defineProperty({}, Op["in"], portmapIds)
@@ -382,7 +445,7 @@ router.post("/batch/delete", function _callee4(req, res) {
 
         case 5:
         case "end":
-          return _context4.stop();
+          return _context6.stop();
       }
     }
   });

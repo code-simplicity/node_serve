@@ -351,6 +351,43 @@ router.get("/delete", function _callee4(req, res) {
     }
   });
 });
+router.post("/update", upload.single("image"), function _callee5(req, res) {
+  var _req$body5, name, total, index, size, hash, chunksPath;
+
+  return regeneratorRuntime.async(function _callee5$(_context5) {
+    while (1) {
+      switch (_context5.prev = _context5.next) {
+        case 0:
+          _req$body5 = req.body, name = _req$body5.name, total = _req$body5.total, index = _req$body5.index, size = _req$body5.size, hash = _req$body5.hash; // 判断是否有文件
+          // 创建临时的文件块
+
+          chunksPath = path.join(dirPath, hash, "/");
+
+          if (fs.existsSync(chunksPath)) {
+            _context5.next = 5;
+            break;
+          }
+
+          _context5.next = 5;
+          return regeneratorRuntime.awrap(utils.mkdirsSync(chunksPath));
+
+        case 5:
+          _context5.next = 7;
+          return regeneratorRuntime.awrap(fs.renameSync(req.file.path, chunksPath + hash + "-" + index));
+
+        case 7:
+          res.send({
+            status: 200,
+            msg: "分片文件上传成功"
+          });
+
+        case 8:
+        case "end":
+          return _context5.stop();
+      }
+    }
+  });
+});
 /**
  * @api {post} /portpointmap/update 修改图片信息
  * @apiDescription 修改图片信息
@@ -370,66 +407,66 @@ router.get("/delete", function _callee4(req, res) {
  * @apiSampleRequest http://localhost:5050/portpointmap/update
  * @apiVersion 1.0.0
  */
+// 分片合并
 
-router.post("/update", upload.single("image"), function _callee5(req, res) {
-  var _req$body5, water_level, wave_direction, embank_ment, id, file, fileTyppe, extName, extNameOut, type;
+router.post("/update/merge_chunks", function _callee6(req, res) {
+  var _req$body6, size, name, total, hash, type, water_level, wave_direction, embank_ment, id, chunksPath, filePath, chunks, i, data;
 
-  return regeneratorRuntime.async(function _callee5$(_context5) {
+  return regeneratorRuntime.async(function _callee6$(_context6) {
     while (1) {
-      switch (_context5.prev = _context5.next) {
+      switch (_context6.prev = _context6.next) {
         case 0:
-          _req$body5 = req.body, water_level = _req$body5.water_level, wave_direction = _req$body5.wave_direction, embank_ment = _req$body5.embank_ment, id = _req$body5.id;
-          file = req.file;
+          _req$body6 = req.body, size = _req$body6.size, name = _req$body6.name, total = _req$body6.total, hash = _req$body6.hash, type = _req$body6.type, water_level = _req$body6.water_level, wave_direction = _req$body6.wave_direction, embank_ment = _req$body6.embank_ment, id = _req$body6.id; // 根据hash值，获取分片文件。
+          // 创建存储文件
+          // 合并
 
-          if (file) {
-            _context5.next = 4;
+          chunksPath = path.join(dirPath, hash, "/");
+          filePath = path.join(dirPath, name); // 读取所有的chunks,文件名存储在数组中,
+
+          chunks = fs.readdirSync(chunksPath);
+          console.log("chunks", chunks); // 创建文件存储
+
+          fs.writeFileSync(filePath, "");
+
+          if (!(chunks.length !== total || chunks.length === 0)) {
+            _context6.next = 9;
             break;
           }
 
-          return _context5.abrupt("return", res.send({
+          res.send.end({
             status: 400,
-            msg: "图片不可以为空."
-          }));
-
-        case 4:
-          if (id) {
-            _context5.next = 6;
-            break;
-          }
-
-          return _context5.abrupt("return", res.send({
-            status: 400,
-            msg: "id不可以为空."
-          }));
-
-        case 6:
-          // 获取文件类型是image/png还是其他
-          fileTyppe = file.mimetype; // 获取图片相关数据，比如文件名称，文件类型
-
-          extName = path.extname(file.path); // 去掉拓展名的一点
-
-          extNameOut = extName.substr(1); // 返回文件的类型
-
-          type = utils.getType(fileTyppe, extNameOut);
-
-          if (!(type === null)) {
-            _context5.next = 13;
-            break;
-          }
-
-          res.send({
-            status: 400,
-            msg: "不支持该类型的图片."
+            msg: "切片文件数量不符合"
           });
-          return _context5.abrupt("return");
+          return _context6.abrupt("return");
+
+        case 9:
+          for (i = 0; i < total; i++) {
+            // 追加写入文件
+            fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i)); // 删除本次使用的chunks
+
+            fs.unlinkSync(chunksPath + hash + "-" + i);
+          } // 同步目录
+
+
+          fs.rmdirSync(chunksPath); // 先获取到原来的，再删除
+
+          _context6.next = 13;
+          return regeneratorRuntime.awrap(PortMapModel.findOne({
+            where: {
+              id: id
+            }
+          }));
 
         case 13:
-          _context5.next = 15;
+          data = _context6.sent;
+          fs.unlinkSync(data.path); // 再修改相关信息
+
+          _context6.next = 17;
           return regeneratorRuntime.awrap(PortPointMapModel.update({
-            url: "".concat(file.originalname),
-            path: file.path,
-            type: fileTyppe,
-            name: "".concat(file.originalname),
+            url: name,
+            path: filePath,
+            type: type,
+            name: name,
             water_level: water_level,
             wave_direction: wave_direction,
             embank_ment: embank_ment
@@ -438,28 +475,23 @@ router.post("/update", upload.single("image"), function _callee5(req, res) {
               id: id
             }
           }).then(function (img) {
-            if (!img) {
-              res.send({
-                status: 400,
-                msg: "修改港口点位图信息失败."
-              });
-            } else {
+            if (img) {
               res.send({
                 status: 200,
-                msg: "修改图片信息成功."
+                msg: "港修改港口点位图信息成功."
               });
             }
           })["catch"](function (error) {
             console.error("修改图片信息失败.", error);
             res.send({
-              status: 400,
+              status: 200,
               msg: "修改图片信息失败."
             });
           }));
 
-        case 15:
+        case 17:
         case "end":
-          return _context5.stop();
+          return _context6.stop();
       }
     }
   });
@@ -480,26 +512,26 @@ router.post("/update", upload.single("image"), function _callee5(req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/batch/delete", function _callee6(req, res) {
+router.post("/batch/delete", function _callee7(req, res) {
   var portpointmapIds;
-  return regeneratorRuntime.async(function _callee6$(_context6) {
+  return regeneratorRuntime.async(function _callee7$(_context7) {
     while (1) {
-      switch (_context6.prev = _context6.next) {
+      switch (_context7.prev = _context7.next) {
         case 0:
           portpointmapIds = req.body.portpointmapIds;
 
           if (portpointmapIds) {
-            _context6.next = 3;
+            _context7.next = 3;
             break;
           }
 
-          return _context6.abrupt("return", res.send({
+          return _context7.abrupt("return", res.send({
             status: 400,
             msg: "portpointmapIds不可以为空"
           }));
 
         case 3:
-          _context6.next = 5;
+          _context7.next = 5;
           return regeneratorRuntime.awrap(PortPointMapModel.destroy({
             where: {
               id: _defineProperty({}, Op["in"], portpointmapIds)
@@ -526,7 +558,7 @@ router.post("/batch/delete", function _callee6(req, res) {
 
         case 5:
         case "end":
-          return _context6.stop();
+          return _context7.stop();
       }
     }
   });

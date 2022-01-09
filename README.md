@@ -1,8 +1,4 @@
-
-
-[TOC]
-
-# node_serve	毕设项目后端接口文档说明
+# node_serve毕设项目后端接口文档说明
 
 ## 启动方法
 
@@ -24,8 +20,6 @@ npm install
 npm run dev
 ```
 
-
-
 ------
 
 ## 开发环境
@@ -38,15 +32,19 @@ IED：VSCode，Navicat。
 
 技术栈：Express +  mysql2 + nodemon + sequelize + http-errors等
 
-## 功能说明
+## 项目组成
 
-### 门户
+本项目是一个前后端分离的项目，一共分为后端，管理端和展示端。
 
+## 门户
 
+门户具体查看[毕设门户展示](https://github.com/dpy0912/educational_reformp-project)
 
-### 管理中心
+## 管理中心
 
+管理中心查看[毕设管理中心](https://github.com/dpy0912/graduation-project-admin)
 
+## 后端接口
 
 ### 数据库设计
 
@@ -146,13 +144,13 @@ IED：VSCode，Navicat。
     - create_time-创建时间
     - update_time-更新时间
 
-创建数据库
+#### 创建数据库
 
 ```sql
 CREATE DATABASE IF NOT EXISTS `design_project` CHAR SET utf8mb4 COLLATE utf8mb4_general_ci;
 ```
 
-创建用户表
+#### 创建用户表
 
 ```mysql
 CREATE TABLE `tb_user`  (
@@ -167,7 +165,7 @@ CREATE TABLE `tb_user`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 ```
 
-创建图片表
+#### 创建图片表
 
 ```mysql
 CREATE TABLE `tb_image`  (
@@ -183,7 +181,7 @@ CREATE TABLE `tb_image`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 ```
 
-创建视频表
+#### 创建视频表
 
 ```mysql
 CREATE TABLE `tb_video`  (
@@ -199,7 +197,7 @@ CREATE TABLE `tb_video`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 ```
 
-创建内容表
+#### 创建内容表
 
 ```sql
 CREATE TABLE `tb_content`  (
@@ -214,17 +212,17 @@ CREATE TABLE `tb_content`  (
 
 ### 连接数据库
 
-添加Sequelize 操作数据库
+添加`Sequelize`中间件操作数据库。不需要编写`Sql`语句，隔离开来。
 
-#### 安装
+#### 安装Sequelize
 
-Sequelize 的使用可以通过 [npm](https://www.npmjs.com/package/sequelize) (或 [yarn](https://yarnpkg.com/package/sequelize)).
+`Sequelize`的使用可以通过 [npm](https://www.npmjs.com/package/sequelize) (或 [yarn](https://yarnpkg.com/package/sequelize)).
 
 ```sh
 npm install --save sequelize
 ```
 
-数据库安装驱动程
+##### 数据库安装驱动程
 
 ```sh
 npm install --save mysql2
@@ -1119,23 +1117,49 @@ http://localhost:5050/excel/upload
 npm install winston
 ```
 
-
-
-
-
 ## 部署教程
 
-### 部署后端
+### docker部署后端
 
 1. 首先从本地将工程文件拷贝到服务器的指定目录，
 
 2. 第二就是运行Dockerfile文件，这个文件是运行项目的配置文件，我们将文件使用docker容器进行部署，这样就可以配置好了，
 
-3. 在工程根目录下运行，这里要设置一直运行node服务，即使出现异常，那么这个东西也不会挂掉，docker就有这样的一个好处，其实这块可以编写一个docker-compose.yml配置文件进行编写的
+   ```sh
+    FROM node:16.13.1
+
+    ENV NODE_ENV=production
+
+    RUN mkdir -p /nodeServe
+
+    COPY . /nodeServe
+
+    WORKDIR /nodeServe
+
+    RUN npm config set registry "https://registry.npm.taobao.org/" \
+        && npm install
+
+    EXPOSE 5050
+
+    CMD ["npm", "run", "start"]
+   ```
+
+3. 在工程根目录下运行，这里要设置一直运行node服务，即使出现异常，那么这个东西也不会挂掉，docker就有这样的一个好处，其实这块可以编写一个docker-compose.yml配置文件进行编写的。
+
+    ```sh
+    version: '2.0'
+    services:
+        node-serve:
+        restart: always
+        image: node-serve-1.0
+        container_name: node-serve
+        ports:
+         - 5050:5050
+    ```
 
    ```sh
     docker build . -t node-serve
-    docker run -d --restart=always -p 5050:5050 node-serve
+    docker-compose up -d
    ```
 
 4. 通过以上命令就可以访问到我们后端接口了，这里可以做一个代理，用来解决跨域的问题，
@@ -1146,7 +1170,7 @@ npm install winston
    http://8.131.240.89:5050/apidoc/index.html
    ```
 
-6. 到此我们的后端就部署完成了
+6. 到此我们的后端就部署完成了，之后就是使用`Nginx`做代理请求，走域名的方式进行。
 
 ### 后端部署另外一种方式，采用pm2部署
 
@@ -1154,7 +1178,7 @@ npm install winston
 
 2. 其次就是安装node环境了，这里我们直接去node.js官网下载好构建的文件，然后配置地址映射，这里就先这样，这里的版本是已经变异好的linux版本，直接拉取就行，如果服务器拉取该包失败，可以从本地通过ftp上传文件到服务器，通过该地址下载 [Node.js下载地址](https://nodejs.org/en/download/) 
 
-   ```
+   ```sh
    wget https://nodejs.org/dist/v16.13.0/node-v16.13.0-linux-x64.tar.xz
    ```
 
@@ -1199,7 +1223,6 @@ npm install winston
    ```
 
 7. pm2就配置好了
-
 8. 接下来就是启动node.js服务了，首先就是在后端目录下
 
    ```sh
@@ -1215,10 +1238,10 @@ npm install winston
    ```
 
 10. 为什么采用pm2呢,因为项目奔溃之后可以进行重启。
+11. 最后配置nginx进行反向代理，配置nginx静态资源，走内网穿透，
+12. 但是我们不推荐这种，推荐使用`docker`部署。
 
-11. 最后配置nginx进行反向代理，配置nginx静态资源，走内网穿透
-
-### 部署管理端
+### docekr部署管理端（不推荐）
 
 1. 首先拷贝工程文件到服务器，然后编写Dockerfile
 
@@ -1252,3 +1275,178 @@ npm install winston
 
 4. 通过服务器给的ip地址+端口就可以访问到我们的接口服务了
 
+### 采用nginx部署管理端静态站点
+
+#### docker配置nginx
+
+在服务器创建一个`Nginx`目录，编写`docker-compose.yml`拉取`Nginx`镜像。
+
+```sh
+version: '2.0'
+services:
+  nginx:
+    restart: always
+    image: nginx:1.19.2-alpine
+    container_name: node-nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "/root/docker/nginx/conf/nginx.conf:/etc/nginx/nginx.conf"
+      - "/root/docker/nginx/wwwroot:/usr/share/nginx/wwwroot"
+      - "/root/docker/nginx/log:/var/log/nginx"
+      - "/root/docker/nginx/cret:/etc/nginx/cret"
+```
+
+这里需要将`volumes`路径换了，换成自己nginx所在的目录，才可以做正确的地址映射。
+
+启动构建`Nginx`镜像。
+
+```sh
+docker-compose up -d
+```
+
+这样`Nginx`就启动好了，然后在`nginx`目录下的`wwwroot`目录下创建两个文件夹，分别是`mp`和`proj`，然后将打包的管理端以及门户分别放到这两个文件夹。
+
+在`conf`目录下创建`nginx.conf`文件。
+
+##### nginx.conf
+
+```sh
+user  nginx;
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+http {
+
+    gzip  on;   #开启gzip
+    gzip_min_length 1k; #低于1kb的资源不压缩
+    gzip_comp_level 3; #压缩级别【1-9】，越大压缩率越高，同时消耗cpu资源也越多，建议设置在4左右。
+    gzip_types text/plain application/javascript application/x-javascript text/javascript text/xml text/css;  #需要压缩哪些响应类型的资源，多个空格隔开。不建议压缩图片，下面会讲为什么。
+    gzip_disable "MSIE [1-6]\.";  #配置禁用gzip条件，支持正则。此处表示ie6及以下不启用gzip
+    gzip_vary on;  #是否添加“Vary: Accept-Encoding”响应头
+
+	upstream node-serve-api{
+		server 172.30.50.4:5050 weight=1;
+	}
+
+    include mime.types;
+
+    keepalive_timeout  65;
+
+   #以下属性中，以ssl开头的属性表示与证书配置有关。
+   server {
+	     listen 80;
+         listen 443 ssl;
+         server_name www.bugdr.cn;
+         root html;
+         index index.html index.htm;
+         ssl_certificate ssl/5479691_www.bugdr.cn.pem;  #需要将cert-file-name.pem替换成已上传的证书文件的名称。
+         ssl_certificate_key ssl/5479691_www.bugdr.cn.key; #需要将cert-file-name.key替换成已上传的证书密钥文件的名称。
+         ssl_session_timeout 10m;
+         ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+         #表示使用的加密套件的类型。
+         ssl_protocols TLSv1 TLSv1.1 TLSv1.2; #表示使用的TLS协议的类型。
+         ssl_prefer_server_ciphers on;
+	    location / {
+			proxy_pass   http://node-serve-api;
+			#以下是一些反向代理的配置可删除
+			proxy_redirect             off;
+			#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
+			proxy_set_header           Host $host;
+			proxy_set_header           Cookie $http_cookie;
+			proxy_set_header           X-Real-IP $remote_addr;
+			proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header           HTTP_X_FORWARDED_FOR $remote_addr;
+			proxy_set_header           X-Forwarded-Server $host;
+		}
+    }
+   server {
+	    listen 80;
+	    listen 443 ssl;
+         server_name mp.bugdr.cn;
+         root html;
+         index index.html index.htm;
+         ssl_certificate ssl/5479457_mp.bugdr.cn.pem;  #需要将cert-file-name.pem替换成已上传的证书文件的名称。
+         ssl_certificate_key ssl/5479457_mp.bugdr.cn.key; #需要将cert-file-name.key替换成已上传的证书密钥文件的名称。
+         ssl_session_timeout 5m;
+         ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+         #表示使用的加密套件的类型。
+         ssl_protocols TLSv1 TLSv1.1 TLSv1.2; #表示使用的TLS协议的类型。
+         ssl_prefer_server_ciphers on;
+         
+		location ^~/user/ {
+			proxy_pass   http://node-serve-api;
+			#以下是一些反向代理的配置可删除
+			proxy_redirect             off;
+			#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
+			proxy_set_header           Host $host;
+			proxy_set_header           Cookie $http_cookie;
+			proxy_set_header           X-Real-IP $remote_addr;
+			proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header           HTTP_X_FORWARDED_FOR $remote_addr;
+			proxy_set_header           X-Forwarded-Server $host;
+		 }
+		
+		 location ^~/admin/ {
+			proxy_pass   http://node-serve-api;
+			#以下是一些反向代理的配置可删除
+			proxy_redirect             off;
+			#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
+			proxy_set_header           Host $host;
+			proxy_set_header           Cookie $http_cookie;
+			proxy_set_header           X-Real-IP $remote_addr;
+			proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header           HTTP_X_FORWARDED_FOR $remote_addr;
+			proxy_set_header           X-Forwarded-Server $host;
+		}
+		
+		location ^~/portal/ {
+			proxy_pass   http://node-serve-api;
+			#以下是一些反向代理的配置可删除
+			proxy_redirect             off;
+			#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
+			proxy_set_header           Host $host;
+			proxy_set_header           Cookie $http_cookie;
+			proxy_set_header           X-Real-IP $remote_addr;
+			proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header           HTTP_X_FORWARDED_FOR $remote_addr;
+			proxy_set_header           X-Forwarded-Server $host;
+		}
+		
+		location / {
+			root   /usr/share/nginx/wwwroot/mp;
+			index  index.html index.htm;
+		}
+	}
+
+   server {
+	    listen 80;
+	    listen 443 ssl;
+         server_name proj.bugdr.cn;
+         root html;
+         index index.html index.htm;
+         ssl_certificate ssl/6982572_proj.bugdr.cn.pem;  #需要将cert-file-name.pem替换成已上传的证书文件的名称。
+         ssl_certificate_key ssl/6982572_proj.bugdr.cn.key; #需要将cert-file-name.key替换成已上传的证书密钥文件的名称。
+         ssl_session_timeout 5m;
+         ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+         #表示使用的加密套件的类型。
+         ssl_protocols TLSv1 TLSv1.1 TLSv1.2; #表示使用的TLS协议的类型。
+         ssl_prefer_server_ciphers on;
+         
+		location / {
+			root   /usr/share/nginx/wwwroot/proj;
+			index  index.html index.htm;
+		}
+	}
+
+}
+```
+
+这里就不用做上面配置的说明，具体可以自行百度说明。
+
+之后我们就可以通过域名访问到我们的项目了。
+
+最后说明一下，管理端以及门户的api可以换成服务器的ip地址,这样就是直接绑定域名进行访问的。

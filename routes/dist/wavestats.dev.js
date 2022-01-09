@@ -163,23 +163,47 @@ router.post("/upload", upload.single("image"), function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.get("/delete", function (req, res) {
-  var id = req.query.id;
-  WaveStatsModel.destroy({
-    where: {
-      id: id
+router.get("/delete", function _callee(req, res) {
+  var id, data;
+  return regeneratorRuntime.async(function _callee$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          id = req.query.id; // 获取路径
+
+          _context.next = 3;
+          return regeneratorRuntime.awrap(WaveStatsModel.findOne({
+            where: {
+              id: id
+            }
+          }));
+
+        case 3:
+          data = _context.sent;
+          // 删除存储在磁盘的图片
+          fs.unlinkSync(data.path);
+          WaveStatsModel.destroy({
+            where: {
+              id: id
+            }
+          }).then(function (result) {
+            res.send({
+              status: 200,
+              msg: "删除波形统计图成功."
+            });
+          })["catch"](function (error) {
+            console.error("删除波形统计图失败.", error);
+            res.send({
+              status: 400,
+              msg: "删除波形统计图失败."
+            });
+          });
+
+        case 6:
+        case "end":
+          return _context.stop();
+      }
     }
-  }).then(function (result) {
-    res.send({
-      status: 200,
-      msg: "删除波形统计图成功."
-    });
-  })["catch"](function (error) {
-    console.error("删除波形统计图失败.", error);
-    res.send({
-      status: 400,
-      msg: "删除波形统计图失败."
-    });
   });
 });
 /**
@@ -202,65 +226,77 @@ router.get("/delete", function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/update", upload.single("image"), function (req, res) {
-  var _req$body = req.body,
-      point_id = _req$body.point_id,
-      id = _req$body.id;
-  var file = req.file;
+router.post("/update", upload.single("image"), function _callee2(req, res) {
+  var _req$body, point_id, id, file, data;
 
-  if (!point_id) {
-    return res.send({
-      status: 400,
-      msg: "请选择对应的点位id."
-    });
-  } // 判断是否有文件
+  return regeneratorRuntime.async(function _callee2$(_context2) {
+    while (1) {
+      switch (_context2.prev = _context2.next) {
+        case 0:
+          _req$body = req.body, point_id = _req$body.point_id, id = _req$body.id;
+          file = req.file;
 
+          if (point_id) {
+            _context2.next = 4;
+            break;
+          }
 
-  if (file === null) {
-    return res.send({
-      status: 400,
-      msg: "图片不可以为空."
-    });
-  } // 获取文件类型是image/png还是其他
+          return _context2.abrupt("return", res.send({
+            status: 400,
+            msg: "请选择对应的点位id."
+          }));
 
+        case 4:
+          if (!(file === null)) {
+            _context2.next = 6;
+            break;
+          }
 
-  var fileTyppe = file.mimetype; // 获取图片相关数据，比如文件名称，文件类型
+          return _context2.abrupt("return", res.send({
+            status: 400,
+            msg: "图片不可以为空."
+          }));
 
-  var extName = path.extname(file.path); // 去掉拓展名的一点
+        case 6:
+          _context2.next = 8;
+          return regeneratorRuntime.awrap(WaveStatsModel.findOne({
+            where: {
+              id: id
+            }
+          }));
 
-  var extNameOut = extName.substr(1); // 返回文件的类型
+        case 8:
+          data = _context2.sent;
+          // 删除存储在磁盘的图片
+          fs.unlinkSync(data.path);
+          WaveStatsModel.update({
+            point_id: point_id,
+            url: file.originalname,
+            path: file.path,
+            type: file.mimetype,
+            name: file.originalname
+          }, {
+            where: {
+              id: id
+            }
+          }).then(function (result) {
+            res.send({
+              status: 200,
+              msg: "修改波形统计图成功."
+            });
+          })["catch"](function (error) {
+            console.error("修改波形统计图失败.", error);
+            res.send({
+              status: 400,
+              msg: "修改波形统计图失败."
+            });
+          });
 
-  var type = utils.getType(fileTyppe, extNameOut);
-
-  if (type === null) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片."
-    });
-    return;
-  }
-
-  WaveStatsModel.update({
-    point_id: point_id,
-    url: file.originalname,
-    path: file.path,
-    type: fileTyppe,
-    name: file.originalname
-  }, {
-    where: {
-      id: id
+        case 11:
+        case "end":
+          return _context2.stop();
+      }
     }
-  }).then(function (result) {
-    res.send({
-      status: 200,
-      msg: "修改波形统计图成功."
-    });
-  })["catch"](function (error) {
-    console.error("修改波形统计图失败.", error);
-    res.send({
-      status: 400,
-      msg: "修改波形统计图失败."
-    });
   });
 });
 /**
@@ -318,15 +354,15 @@ router.get("/search/point_id", function (req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/findAll", function _callee(req, res) {
+router.post("/findAll", function _callee3(req, res) {
   var _req$body2, pageNum, pageSize;
 
-  return regeneratorRuntime.async(function _callee$(_context) {
+  return regeneratorRuntime.async(function _callee3$(_context3) {
     while (1) {
-      switch (_context.prev = _context.next) {
+      switch (_context3.prev = _context3.next) {
         case 0:
           _req$body2 = req.body, pageNum = _req$body2.pageNum, pageSize = _req$body2.pageSize;
-          _context.next = 3;
+          _context3.next = 3;
           return regeneratorRuntime.awrap(WaveStatsModel.findAll({
             order: [["create_time", "DESC"]]
           }).then(function (result) {
@@ -352,7 +388,7 @@ router.post("/findAll", function _callee(req, res) {
 
         case 3:
         case "end":
-          return _context.stop();
+          return _context3.stop();
       }
     }
   });
@@ -373,26 +409,26 @@ router.post("/findAll", function _callee(req, res) {
  * @apiVersion 1.0.0
  */
 
-router.post("/batch/delete", function _callee2(req, res) {
+router.post("/batch/delete", function _callee4(req, res) {
   var wavestatsIds, data;
-  return regeneratorRuntime.async(function _callee2$(_context2) {
+  return regeneratorRuntime.async(function _callee4$(_context4) {
     while (1) {
-      switch (_context2.prev = _context2.next) {
+      switch (_context4.prev = _context4.next) {
         case 0:
           wavestatsIds = req.body.wavestatsIds;
 
           if (wavestatsIds) {
-            _context2.next = 3;
+            _context4.next = 3;
             break;
           }
 
-          return _context2.abrupt("return", res.send({
+          return _context4.abrupt("return", res.send({
             status: 400,
             msg: "wavestatsIds不可以为空"
           }));
 
         case 3:
-          _context2.next = 5;
+          _context4.next = 5;
           return regeneratorRuntime.awrap(WaveStatsModel.findAll({
             where: {
               id: _defineProperty({}, Op["in"], wavestatsIds)
@@ -400,13 +436,13 @@ router.post("/batch/delete", function _callee2(req, res) {
           }));
 
         case 5:
-          data = _context2.sent;
+          data = _context4.sent;
           // 批量删除存储在磁盘的图片
           data.forEach(function (item) {
             fs.unlinkSync(item.path);
           }); // 删除数据库字段
 
-          _context2.next = 9;
+          _context4.next = 9;
           return regeneratorRuntime.awrap(WaveStatsModel.destroy({
             where: {
               id: _defineProperty({}, Op["in"], wavestatsIds)
@@ -433,7 +469,7 @@ router.post("/batch/delete", function _callee2(req, res) {
 
         case 9:
         case "end":
-          return _context2.stop();
+          return _context4.stop();
       }
     }
   });

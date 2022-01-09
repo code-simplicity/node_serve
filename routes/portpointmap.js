@@ -285,6 +285,22 @@ router.get("/delete", async (req, res) => {
     });
 });
 
+router.post("/update", upload.single("image"), async (req, res) => {
+  const { name, total, index, size, hash } = req.body;
+  // 判断是否有文件
+  // 创建临时的文件块
+  const chunksPath = path.join(dirPath, hash, "/");
+  if (!fs.existsSync(chunksPath)) {
+    await utils.mkdirsSync(chunksPath);
+  }
+  // 文件重命名
+  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
+  res.send({
+    status: 200,
+    msg: "分片文件上传成功",
+  });
+});
+
 /**
  * @api {post} /portpointmap/update 修改图片信息
  * @apiDescription 修改图片信息
@@ -304,42 +320,58 @@ router.get("/delete", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portpointmap/update
  * @apiVersion 1.0.0
  */
-router.post("/update", upload.single("image"), async (req, res) => {
-  const { water_level, wave_direction, embank_ment, id } = req.body;
-  const file = req.file;
-  if (!file) {
-    return res.send({
+// 分片合并
+router.post("/update/merge_chunks", async (req, res) => {
+  const {
+    size,
+    name,
+    total,
+    hash,
+    type,
+    water_level,
+    wave_direction,
+    embank_ment,
+    id,
+  } = req.body;
+  // 根据hash值，获取分片文件。
+  // 创建存储文件
+  // 合并
+  const chunksPath = path.join(dirPath, hash, "/");
+  const filePath = path.join(dirPath, name);
+  // 读取所有的chunks,文件名存储在数组中,
+  const chunks = fs.readdirSync(chunksPath);
+  console.log("chunks", chunks);
+  // 创建文件存储
+  fs.writeFileSync(filePath, "");
+  if (chunks.length !== total || chunks.length === 0) {
+    res.send.end({
       status: 400,
-      msg: "图片不可以为空.",
-    });
-  }
-  if (!id) {
-    return res.send({
-      status: 400,
-      msg: "id不可以为空.",
-    });
-  }
-  // 获取文件类型是image/png还是其他
-  const fileTyppe = file.mimetype;
-  // 获取图片相关数据，比如文件名称，文件类型
-  const extName = path.extname(file.path);
-  // 去掉拓展名的一点
-  const extNameOut = extName.substr(1);
-  // 返回文件的类型
-  const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片.",
+      msg: "切片文件数量不符合",
     });
     return;
   }
+  for (let i = 0; i < total; i++) {
+    // 追加写入文件
+    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
+    // 删除本次使用的chunks
+    fs.unlinkSync(chunksPath + hash + "-" + i);
+  }
+  // 同步目录
+  fs.rmdirSync(chunksPath);
+  // 先获取到原来的，再删除
+  const data = await PortMapModel.findOne({
+    where: {
+      id,
+    },
+  });
+  fs.unlinkSync(data.path);
+  // 再修改相关信息
   await PortPointMapModel.update(
     {
-      url: `${file.originalname}`,
-      path: file.path,
-      type: fileTyppe,
-      name: `${file.originalname}`,
+      url: name,
+      path: filePath,
+      type: type,
+      name: name,
       water_level: water_level,
       wave_direction: wave_direction,
       embank_ment: embank_ment,
@@ -351,22 +383,17 @@ router.post("/update", upload.single("image"), async (req, res) => {
     }
   )
     .then((img) => {
-      if (!img) {
-        res.send({
-          status: 400,
-          msg: "修改港口点位图信息失败.",
-        });
-      } else {
+      if (img) {
         res.send({
           status: 200,
-          msg: "修改图片信息成功.",
+          msg: "港修改港口点位图信息成功.",
         });
       }
     })
     .catch((error) => {
       console.error("修改图片信息失败.", error);
       res.send({
-        status: 400,
+        status: 200,
         msg: "修改图片信息失败.",
       });
     });
