@@ -32,16 +32,6 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
 // 处理跨域
-// app.use(cors());
-// app.all('*', function (req, res, next) {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header('Access-Control-Allow-Headers', "*");
-//   res.header("Access-Control-Allow-Methods", "*");
-//   res.header("Access-Control-Allow-Credentials", true);
-//   next();
-// });
-
-// 处理跨域
 app.use((req, res, next) => {
   //判断路径
   if (req.path !== "/" && !req.path.includes(".")) {

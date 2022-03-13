@@ -4,6 +4,7 @@ const configDev = {
   username: "root", // 用户名
   password: "123456", // 口令
   host: "localhost", // 主机名
+  // host: "192.168.1.112", // 主机名
   port: 3306, // 端口号，MySQL默认3306
 };
 
@@ -11,4 +12,7 @@ const configDev = {
 const uploadDev = "/root/docker/Graduation-Project/uploadUrl";
 
 // 暴露配置
-module.exports = { configDev, uploadDev };
+module.exports = {
+  configDev,
+  uploadDev
+};

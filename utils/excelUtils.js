@@ -3,9 +3,6 @@
 const node_xlsx = require('node-xlsx');
 const fs = require('fs');
 
-// 导入暴露的模型
-const UserModel = require('../models/UserModel')
-
 module.exports = {
     // 解析导入的excel,接收一个参数，就是文件
     parseExcel(config) {

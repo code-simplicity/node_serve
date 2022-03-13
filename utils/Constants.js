@@ -8,6 +8,23 @@ const TYPE_JPG_WITH_PREFIX = PREFIX + "jpg";
 const TYPE_PNG_WITH_PREFIX = PREFIX + "png";
 const TYPE_GIF_WITH_PREFIX = PREFIX + "gif";
 
+// 状态码
+class baseResultCode {
+  // 成功
+  static SUCCESS = 20000
+  // 失败
+  static FAILED = 40000
+  // api调用过于频繁
+  static API_BUSY = 40001
+}
+
+// 七牛云
+const QI_NIU_CONFIG = {
+  accessKey: "hQcQH0SY8z8-TfBCStSAUkWtGkzP-Od6qKSiR-Kz",
+  secretKey: "OhIvXXXpJ8ty-KStq3YDG_JOb-vJEmXTH9aVkobi",
+  bucket: "node_images"
+}
+
 module.exports = {
   TYPE_JPG,
   TYPE_PNG,
@@ -15,4 +32,6 @@ module.exports = {
   TYPE_JPG_WITH_PREFIX,
   TYPE_PNG_WITH_PREFIX,
   TYPE_GIF_WITH_PREFIX,
+  QI_NIU_CONFIG,
+  baseResultCode
 };

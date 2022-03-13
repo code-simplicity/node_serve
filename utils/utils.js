@@ -94,5 +94,12 @@ module.exports = {
     if (String(num).length > len) return num;
     return (Array(len).join(0) + num).slice(-len);
   },
+
+  // 判断字符串是否为空
+  isEmpty(text) {
+    return text === null ? true : false
+  },
+
+  // 异步创建文件夹
   mkdirsSync,
 };

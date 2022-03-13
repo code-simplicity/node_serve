@@ -4,7 +4,7 @@ const configProd = {
   username: "root", // 用户名
   password: "123456", // 口令
   host: "localhost", // 主机名
-  // host: "8.131.240.89", // 主机名
+  // host: "192.168.1.112", // 主机名
   port: 3306, // 端口号，MySQL默认3306
 };
 
@@ -13,4 +13,7 @@ const uploadProd = "/root/docker/Graduation-Project/uploadUrl";
 // const uploadProd = "H:\\AwebKF\\毕业设计\\项目\\uploadUrl\\";
 
 // 暴露配置
-module.exports = { configProd, uploadProd };
+module.exports = {
+  configProd,
+  uploadProd
+};

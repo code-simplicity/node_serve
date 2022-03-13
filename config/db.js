@@ -1,20 +1,24 @@
-const { Sequelize } = require("sequelize");
+const {
+  Sequelize
+} = require("sequelize");
 // 连接数据库
-const { config } = require("./config");
+const {
+  config
+} = require("./config");
 
 // 配置数据库连接
 const sequelizedb = new Sequelize(
   config.database,
   config.username,
-  config.password,
-  {
+  config.password, {
     host: config.host,
     dialect: "mysql",
     // 连接池设置
     pool: {
-      max: 5,
+      max: 30,
       min: 0,
-      idle: 30000,
+      acquire: 30000,
+      idle: 10000
     },
 
     // 自定义日志

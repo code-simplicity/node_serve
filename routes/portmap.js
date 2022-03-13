@@ -2,7 +2,12 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
+
+// 引入七牛云
+const qiniu = require("qiniu")
 
 const router = express.Router();
 
@@ -13,9 +18,16 @@ const PortMapModel = require("../models/PortMapModel");
 
 const utils = require("../utils/utils");
 
+// 引入常量
+const Constants = require("../utils/Constants")
+
+const mac = new qiniu.auth.digest.Mac(Constants.QI_NIU_CONFIG.accessKey, Constants.QI_NIU_CONFIG.secretKey)
+
 // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
 const dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map");
-const upload = multer({ dest: dirPath });
+const upload = multer({
+  dest: dirPath
+});
 
 /**
  * @api {post} /portmap/upload 上传港口地图
@@ -35,7 +47,13 @@ const upload = multer({ dest: dirPath });
  */
 router.post("/upload", upload.single("image"), async (req, res) => {
   console.log("file upload :>> ");
-  const { name, total, index, size, hash } = req.body;
+  const {
+    name,
+    total,
+    index,
+    size,
+    hash
+  } = req.body;
   // 判断是否有文件
   // 创建临时的文件块
   const chunksPath = path.join(dirPath, hash, "/");
@@ -52,7 +70,13 @@ router.post("/upload", upload.single("image"), async (req, res) => {
 
 // 分片合并
 router.post("/upload/merge_chunks", async (req, res) => {
-  const { size, name, total, hash, type } = req.body;
+  const {
+    size,
+    name,
+    total,
+    hash,
+    type
+  } = req.body;
   // 根据hash值，获取分片文件。
   // 创建存储文件
   // 合并
@@ -80,11 +104,11 @@ router.post("/upload/merge_chunks", async (req, res) => {
   fs.rmdirSync(chunksPath);
   // 保存数据到数据库
   PortMapModel.create({
-    url: name,
-    path: filePath,
-    type: type,
-    name: name,
-  })
+      url: name,
+      path: filePath,
+      type: type,
+      name: name,
+    })
     .then((portmap) => {
       res.send({
         status: 200,
@@ -118,7 +142,9 @@ router.post("/upload/merge_chunks", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/delete", async (req, res) => {
-  const { id } = req.query;
+  const {
+    id
+  } = req.query;
   // 获取路径
   const data = await PortMapModel.findOne({
     where: {
@@ -129,10 +155,10 @@ router.get("/delete", async (req, res) => {
   fs.unlinkSync(data.path);
   // 删除数据库字段，
   PortMapModel.destroy({
-    where: {
-      id: id,
-    },
-  })
+      where: {
+        id: id,
+      },
+    })
     .then((portmap) => {
       res.send({
         status: 200,
@@ -164,10 +190,15 @@ router.get("/delete", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/find", (req, res) => {
-  const { pageNum, pageSize } = req.body;
+  const {
+    pageNum,
+    pageSize
+  } = req.body;
   PortMapModel.findAll({
-    order: [["create_time", "DESC"]],
-  })
+      order: [
+        ["create_time", "DESC"]
+      ],
+    })
     .then((portmap) => {
       res.send({
         status: 200,
@@ -185,7 +216,13 @@ router.post("/find", (req, res) => {
 });
 
 router.post("/update", upload.single("image"), async (req, res) => {
-  const { name, total, index, size, hash } = req.body;
+  const {
+    name,
+    total,
+    index,
+    size,
+    hash
+  } = req.body;
   // 判断是否有文件
   // 创建临时的文件块
   const chunksPath = path.join(dirPath, hash, "/");
@@ -217,7 +254,14 @@ router.post("/update", upload.single("image"), async (req, res) => {
  */
 // 分片合并
 router.post("/update/merge_chunks", async (req, res) => {
-  const { size, name, total, hash, type, id } = req.body;
+  const {
+    size,
+    name,
+    total,
+    hash,
+    type,
+    id
+  } = req.body;
 
   // 根据hash值，获取分片文件。
   // 创建存储文件
@@ -252,19 +296,16 @@ router.post("/update/merge_chunks", async (req, res) => {
   });
   fs.unlinkSync(data.path);
   // 再修改相关信息
-  PortMapModel.update(
-    {
+  PortMapModel.update({
       url: name,
       path: filePath,
       type: type,
       name: name,
-    },
-    {
+    }, {
       where: {
         id,
       },
-    }
-  )
+    })
     .then((portmap) => {
       if (portmap) {
         res.send({
@@ -298,7 +339,9 @@ router.post("/update/merge_chunks", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { portmapIds } = req.body;
+  const {
+    portmapIds
+  } = req.body;
   if (!portmapIds) {
     return res.send({
       status: 400,
@@ -306,12 +349,12 @@ router.post("/batch/delete", async (req, res) => {
     });
   }
   await PortMapModel.destroy({
-    where: {
-      id: {
-        [Op.in]: portmapIds,
+      where: {
+        id: {
+          [Op.in]: portmapIds,
+        },
       },
-    },
-  })
+    })
     .then((portmap) => {
       if (portmap) {
         res.send({
@@ -355,7 +398,9 @@ router.get("/search", (req, res) => {
     // 查询图片
     // 首先查询存储的位置，
     // 通过文件流的形式将图片读写
-    const { id } = req.query;
+    const {
+      id
+    } = req.query;
     PortMapModel.findOne({
       where: {
         id,
@@ -363,7 +408,9 @@ router.get("/search", (req, res) => {
     }).then((img) => {
       if (img) {
         // 设置响应头，告诉浏览器这是图片
-        res.writeHead(200, { "Content-Type": "image/png" });
+        res.writeHead(200, {
+          "Content-Type": "image/png"
+        });
         // 创建一个读取图片流
         const stream = fs.createReadStream(img.path);
         // 声明一个存储数组
