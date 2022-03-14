@@ -357,7 +357,6 @@ router.post("/user/update", async (req, res) => {
         id: user.id,
       },
     })
-  console.log(userInfo)
   if (userInfo) {
     const {
       password,
@@ -412,7 +411,6 @@ router.post("/user/add/score", async (req, res) => {
         id: id
       }
     })
-    console.log(dataValues)
     if (userInfo || dataValues.score === score) {
       return res.send(R.success({
         score: score

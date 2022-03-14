@@ -1,10 +1,11 @@
 // 选择列表
 const express = require("express");
 const router = express.Router();
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
 
-const path = require("path");
-const fs = require("fs");
+const R = require("../utils/R")
 
 const utils = require("../utils/utils");
 
@@ -28,26 +29,36 @@ const ChooseModel = require("../models/ChooseModel");
  * @apiSampleRequest http://localhost:5050/choose/add
  * @apiVersion 1.0.0
  */
-router.post("/add", (req, res) => {
-  const { content, category } = req.body;
-  ChooseModel.create({
-    category: category,
-    content: content,
-  })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "添加内容成功.",
-        data: content,
-      });
+router.post("/add", async (req, res) => {
+  try {
+    const {
+      content,
+      category
+    } = req.body;
+    if (!content) {
+      return res.send(R.fail("内容不能为空."))
+    }
+    if (!category) {
+      return res.send(R.fail("分类不能为空."))
+    }
+    const {
+      dataValues
+    } = await ChooseModel.create({
+      category,
+      content,
     })
-    .catch((error) => {
-      console.error("添加内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "添加内容失败，请重试！",
-      });
-    });
+    if (dataValues !== null) {
+      return res.send(R.success({
+        content,
+        category
+      }, "添加内容成功."))
+    } else {
+      return res.send(R.fail("添加内容失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("添加内容失败."))
+  }
+
 });
 
 /**
@@ -65,26 +76,24 @@ router.post("/add", (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
-  const { id } = req.query;
-  ChooseModel.destroy({
+router.get("/delete", async (req, res) => {
+  const {
+    id
+  } = req.query;
+  if (!id) {
+    return res.send(R.fail("选择的id不可以为空."))
+  }
+  const choose = await ChooseModel.destroy({
     where: {
       id,
     },
   })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "删除内容成功.",
-      });
-    })
-    .catch((error) => {
-      console.error("删除内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "删除内容失败，请重试！",
-      });
-    });
+  // 返回值是1证明删除成功
+  if (choose) {
+    return res.send(R.success({}, "删除内容成功."))
+  } else {
+    return res.send(R.fail("删除内容失败."))
+  }
 });
 
 /**
@@ -104,32 +113,32 @@ router.get("/delete", (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/update
  * @apiVersion 1.0.0
  */
-router.post("/update", (req, res) => {
-  const { id, content, category } = req.body;
-  ChooseModel.update(
-    {
-      content,
-      category,
-    },
-    {
-      where: {
-        id,
-      },
+router.post("/update", async (req, res) => {
+  try {
+    const result = req.body;
+    if (!result.id) {
+      return res.send(R.fail("id不可以为空."))
     }
-  )
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "修改内容成功.",
-      });
+    if (!result.content) {
+      return res.send(R.fail("内容不可以为空."))
+    }
+    if (!result.category) {
+      return res.send(R.fail("分类不可以为空."))
+    }
+    // 解构
+    const [choose] = await ChooseModel.update(result, {
+      where: {
+        id: result.id
+      },
     })
-    .catch((error) => {
-      console.error("修改内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "修改内容失败，请重试！",
-      });
-    });
+    if (choose) {
+      return res.send(R.success(result, "修改内容成功"))
+    } else {
+      return res.send(R.fail("修改内容失败,并未作出修改."))
+    }
+  } catch (error) {
+    return res.send(R.fail("修改内容失败."))
+  }
 });
 
 /**
@@ -148,34 +157,29 @@ router.post("/update", (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/search
  * @apiVersion 1.0.0
  */
-router.get("/search", (req, res) => {
-  const { id } = req.query;
-  ChooseModel.findOne({
-    where: {
-      id,
-    },
-  })
-    .then((content) => {
-      if (content) {
-        res.send({
-          status: 200,
-          msg: "查询内容成功.",
-          data: content,
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "查询内容失败，请重试！",
-        });
-      }
+router.get("/search", async (req, res) => {
+  try {
+    const {
+      id
+    } = req.query;
+    if (!id) {
+      return res.send(R.fail("请输入id."))
+    }
+    const {
+      dataValues
+    } = await ChooseModel.findOne({
+      where: {
+        id,
+      },
     })
-    .catch((error) => {
-      console.error("查询内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询内容失败，请重试！",
-      });
-    });
+    if (dataValues !== null) {
+      return res.send(R.success(dataValues, "查询内容成功."))
+    } else {
+      return res.send(R.fail("查询内容失败，请重试！"))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询内容失败，不存在该内容."))
+  }
 });
 
 /**
@@ -193,25 +197,25 @@ router.get("/search", (req, res) => {
  * @apiSampleRequest http://localhost:5050/choose/findAll
  * @apiVersion 1.0.0
  */
-router.post("/findAll", (req, res) => {
-  const { pageNum, pageSize } = req.body;
-  ChooseModel.findAll({
-    order: [["create_time"]],
-  })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "查询内容成功.",
-        data: utils.pageFilter(content, pageNum, pageSize),
-      });
+router.post("/findAll", async (req, res) => {
+  try {
+    const {
+      pageNum,
+      pageSize
+    } = req.body;
+    const choose = await ChooseModel.findAll({
+      order: [
+        ["create_time"]
+      ],
     })
-    .catch((error) => {
-      console.error("查询内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询内容失败，请重试！",
-      });
-    });
+    if (choose.length > 0) {
+      return res.send(R.success(utils.pageFilter(choose, pageNum, pageSize), "查询内容成功."))
+    } else {
+      return res.send(R.success(utils.pageFilter(choose, pageNum, pageSize), "目前没有内容."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询内容失败."))
+  }
 });
 
 /**
@@ -230,35 +234,24 @@ router.post("/findAll", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { chooseIds } = req.body;
-  if (!chooseIds) {
-    return res.send({
-      status: 400,
-      msg: "chooseIds不可以为空",
-    });
+  const {
+    chooseIds
+  } = req.body;
+  if (chooseIds.length <= 0) {
+    return res.send(R.fail("chooseIds不可以为空."))
   }
-  await ChooseModel.destroy({
+  const choose = await ChooseModel.destroy({
     where: {
       id: {
         [Op.in]: chooseIds,
       },
     },
   })
-    .then((content) => {
-      if (content) {
-        res.send({
-          status: 200,
-          msg: "选择批量删除成功.",
-        });
-      }
-    })
-    .catch((err) => {
-      console.error("选择批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "选择批量删除失败.",
-      });
-    });
+  if (choose) {
+    return res.send(R.success({}, "选择批量删除成功."))
+  } else {
+    return res.send(R.fail("选择批量删除失败."))
+  }
 });
 
 module.exports = router;
