@@ -48,10 +48,7 @@ router.post("/add", async (req, res) => {
       content,
     })
     if (dataValues !== null) {
-      return res.send(R.success({
-        content,
-        category
-      }, "添加内容成功."))
+      return res.send(R.success(dataValues, "添加内容成功."))
     } else {
       return res.send(R.fail("添加内容失败."))
     }

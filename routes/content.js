@@ -1,9 +1,13 @@
 // 文字内容
 const express = require("express");
 const router = express.Router();
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
 
 const utils = require("../utils/utils");
+
+const R = require("../utils/R")
 
 // 导入暴露的模型
 const ContentModel = require("../models/ContentModel");
@@ -24,64 +28,30 @@ const ContentModel = require("../models/ContentModel");
  * @apiSampleRequest http://localhost:5050/content/add
  * @apiVersion 1.0.0
  */
-router.post("/add", (req, res) => {
-  const { content } = req.body;
-  ContentModel.create({
-    content: content,
-  })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "添加内容成功.",
-        data: content,
-      });
+router.post("/add", async (req, res) => {
+  try {
+    const {
+      content,
+      choose_id
+    } = req.body;
+    if (!content) {
+      return res.send(R.fail("请输入内容."))
+    }
+    const {
+      dataValues
+    } = await ContentModel.create({
+      choose_id,
+      content,
     })
-    .catch((error) => {
-      console.error("添加内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "添加内容失败，请重试！",
-      });
-    });
-});
-
-/**
- * @api {post} /content/add/choose_id 添加内容有外键的
- * @apiDescription 添加内容有外键的
- * @apiName 添加内容有外键的
- * @apiGroup Content
- * @apiBody {String} choose_id 选择表id(外键)
- * @apiBody {String} content 内容
- * @apiSuccess {json} result
- * @apiSuccessExample {json} Success-Response:
- *  {
- *      "status" : "200",
- *      "msg": "添加内容成功.",
- *      "data":  content
- *  }
- * @apiSampleRequest http://localhost:5050/content/add/choose_id
- * @apiVersion 1.0.0
- */
-router.post("/add/choose_id", (req, res) => {
-  const { choose_id, content } = req.body;
-  ContentModel.create({
-    content: content,
-    choose_id: choose_id,
-  })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "添加内容成功.",
-        data: content,
-      });
-    })
-    .catch((error) => {
-      console.error("添加内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "添加内容失败，请重试！",
-      });
-    });
+    console.log(dataValues)
+    if (dataValues !== null) {
+      return res.send(R.success(dataValues, "内容添加成功."))
+    } else {
+      return res.send(R.fail("内容添加失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("内容添加失败."))
+  }
 });
 
 /**
@@ -99,33 +69,23 @@ router.post("/add/choose_id", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/delete
  * @apiVersion 1.0.0
  */
-router.get("/delete", (req, res) => {
-  const { id } = req.query;
-  ContentModel.destroy({
+router.get("/delete", async (req, res) => {
+  const {
+    id
+  } = req.query;
+  if (!id) {
+    return res.send(R.fail("id不可以为空."))
+  }
+  const content = await ContentModel.destroy({
     where: {
       id,
     },
   })
-    .then((content) => {
-      if (content) {
-        res.send({
-          status: 200,
-          msg: "删除内容成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "删除内容失败，请重试！",
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("删除内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "删除内容失败，请重试！",
-      });
-    });
+  if (content) {
+    return res.send(R.success({}, "删除内容成功."))
+  } else {
+    return res.send(R.fail("删除内容失败."))
+  }
 });
 
 /**
@@ -145,32 +105,36 @@ router.get("/delete", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/update
  * @apiVersion 1.0.0
  */
-router.post("/update", (req, res) => {
-  const { id, content } = req.body;
-  ContentModel.update(
-    {
+router.post("/update", async (req, res) => {
+  try {
+    const {
+      id,
+      content
+    } = req.body;
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
+    }
+    if (!content) {
+      return res.send(R.fail("内容不可以为空."))
+    }
+    const [data] = await ContentModel.update({
       content,
-    },
-    {
+    }, {
       where: {
         id,
       },
-    }
-  )
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "修改内容成功.",
-        data: content,
-      });
     })
-    .catch((error) => {
-      console.error("修改内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "修改内容失败，请重试！",
-      });
-    });
+    if (data) {
+      return res.send(R.success({
+        id,
+        content
+      }, "内容更新成功."))
+    } else {
+      return res.send(R.fail("并未作出内容的修改."))
+    }
+  } catch (error) {
+    return res.send(R.fail("内容更新失败."))
+  }
 });
 
 /**
@@ -189,27 +153,29 @@ router.post("/update", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/search
  * @apiVersion 1.0.0
  */
-router.get("/search", (req, res) => {
-  const { id } = req.query;
-  ContentModel.findOne({
-    where: {
-      id,
-    },
-  })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "查询内容成功.",
-        data: content,
-      });
+router.get("/search", async (req, res) => {
+  try {
+    const {
+      id
+    } = req.query;
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
+    }
+    const {
+      dataValues
+    } = await ContentModel.findOne({
+      where: {
+        id,
+      },
     })
-    .catch((error) => {
-      console.error("查询内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询内容失败，请重试！",
-      });
-    });
+    if (dataValues !== null) {
+      return res.send(R.success(dataValues, "获取内容成功."))
+    } else {
+      return res.send(R.fail("获取内容失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("获取内容失败."))
+  }
 });
 
 /**
@@ -230,29 +196,27 @@ router.get("/search", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/search/choose_id
  * @apiVersion 1.0.0
  */
-router.post("/search/choose_id", (req, res) => {
-  const { choose_id, pageNum, pageSize } = req.body;
-  ContentModel.findAll({
-    where: {
-      choose_id: choose_id,
-    },
-  })
-    .then((content) => {
-      if (content) {
-        res.send({
-          status: 200,
-          msg: "查询内容成功.",
-          data: utils.pageFilter(content, pageNum, pageSize),
-        });
-      }
+router.post("/search/choose_id", async (req, res) => {
+  try {
+    const {
+      choose_id,
+      pageNum,
+      pageSize
+    } = req.body;
+    const content = await ContentModel.findAll({
+      where: {
+        choose_id,
+      },
     })
-    .catch((error) => {
-      console.error("查询内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询内容失败，请重试！",
-      });
-    });
+    if (content.length > 0) {
+      return res.send(R.success(utils.pageFilter(content, pageNum, pageSize), "查询内容成功."))
+    } else {
+      return res.send(R.fail("查询内容失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询内容失败."))
+  }
+
 });
 
 /**
@@ -270,25 +234,21 @@ router.post("/search/choose_id", (req, res) => {
  * @apiSampleRequest http://localhost:5050/content/findAll
  * @apiVersion 1.0.0
  */
-router.post("/findAll", (req, res) => {
-  const { pageNum, pageSize, choose_id } = req.body;
-  ContentModel.findAll({
-    order: [["create_time"]],
+router.post("/findAll", async (req, res) => {
+  const {
+    pageNum,
+    pageSize
+  } = req.body;
+  const content = await ContentModel.findAll({
+    order: [
+      ["create_time"]
+    ],
   })
-    .then((content) => {
-      res.send({
-        status: 200,
-        msg: "查询内容成功.",
-        data: utils.pageFilter(content, pageNum, pageSize),
-      });
-    })
-    .catch((error) => {
-      console.error("查询内容失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询内容失败，请重试！",
-      });
-    });
+  if (content.length > 0) {
+    return res.send(R.success(utils.pageFilter(content, pageNum, pageSize), "查询内容成功."))
+  } else {
+    return res.send(R.fail("查询内容成功."))
+  }
 });
 
 /**
@@ -307,39 +267,23 @@ router.post("/findAll", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { contentIds } = req.body;
-  if (!contentIds) {
-    return res.send({
-      status: 400,
-      msg: "contentIds不可以为空",
-    });
+  const {
+    contentIds
+  } = req.body;
+  if (contentIds.length <= 0) {
+    return res.send(R.fail("contentIds不可以为空."))
   }
-  await ContentModel.destroy({
+  const content = await ContentModel.destroy({
     where: {
       id: {
         [Op.in]: contentIds,
       },
     },
   })
-    .then((content) => {
-      if (content) {
-        res.send({
-          status: 200,
-          msg: "内容批量删除成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "内容批量删除失败.",
-        });
-      }
-    })
-    .catch((err) => {
-      console.error("内容批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "内容批量删除失败.",
-      });
-    });
+  if (content) {
+    return res.send(R.success({}, "内容批量删除成功."))
+  } else {
+    return res.send(R.fail("内容批量删除失败."))
+  }
 });
 module.exports = router;
