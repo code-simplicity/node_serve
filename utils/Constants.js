@@ -19,10 +19,22 @@ class baseResultCode {
 }
 
 // 七牛云
-const QI_NIU_CONFIG = {
-  accessKey: "hQcQH0SY8z8-TfBCStSAUkWtGkzP-Od6qKSiR-Kz",
-  secretKey: "OhIvXXXpJ8ty-KStq3YDG_JOb-vJEmXTH9aVkobi",
-  bucket: "node_images"
+// const QI_NIU_CONFIG = {
+//   accessKey: "hQcQH0SY8z8-TfBCStSAUkWtGkzP-Od6qKSiR-Kz",
+//   secretKey: "OhIvXXXpJ8ty-KStq3YDG_JOb-vJEmXTH9aVkobi",
+//   bucket: "node_images"
+// }
+
+// 腾讯云对象存储配置
+const txCosConfig = {
+  // id
+  SecretId: "AKIDiGXYHjuoRnsglxyjETSCgusb4GCuMZVA",
+  // key
+  SecretKey: "TfZCYdS2MPChvsY0EEzVmob9SWTBesrc",
+  // 存储桶名字
+  Bucket: "bugdr-project",
+  // 存储桶Region可以在COS控制台指定存储桶的概览页查看
+  Region: "ap-beijing",
 }
 
 module.exports = {
@@ -33,5 +45,6 @@ module.exports = {
   TYPE_PNG_WITH_PREFIX,
   TYPE_GIF_WITH_PREFIX,
   QI_NIU_CONFIG,
-  baseResultCode
+  baseResultCode,
+  txCosConfig
 };

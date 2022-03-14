@@ -1,8 +1,10 @@
 // 点位表
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
+
+const R = require("../utils/R")
 
 const router = express.Router();
 
@@ -29,11 +31,14 @@ const PointModel = require("../models/PointModel");
  * @apiVersion 1.0.0
  */
 router.post("/add", (req, res) => {
-  const { port_point_map_id, content } = req.body;
+  const {
+    port_point_map_id,
+    content
+  } = req.body;
   PointModel.create({
-    content: content,
-    port_point_map_id: port_point_map_id,
-  })
+      content: content,
+      port_point_map_id: port_point_map_id,
+    })
     .then((point) => {
       res.send({
         status: 200,
@@ -67,12 +72,14 @@ router.post("/add", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/delete", (req, res) => {
-  const { id } = req.query;
+  const {
+    id
+  } = req.query;
   PointModel.destroy({
-    where: {
-      id: id,
-    },
-  })
+      where: {
+        id: id,
+      },
+    })
     .then((point) => {
       res.send({
         status: 200,
@@ -110,10 +117,10 @@ router.get("/delete", (req, res) => {
 router.post("/update", (req, res) => {
   const point = req.body;
   PointModel.update(point, {
-    where: {
-      id: point.id,
-    },
-  })
+      where: {
+        id: point.id,
+      },
+    })
     .then((point) => {
       res.send({
         status: 200,
@@ -146,20 +153,26 @@ router.post("/update", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/search", (req, res) => {
-  const { pageNum, pageSize, port_point_map_id, content } = req.body;
+  const {
+    pageNum,
+    pageSize,
+    port_point_map_id,
+    content
+  } = req.body;
   PointModel.findAll({
-    where: {
-      [Op.or]: [
-        {
-          port_point_map_id: port_point_map_id ? port_point_map_id : "",
-        },
-        {
-          content: content ? content : "",
-        },
+      where: {
+        [Op.or]: [{
+            port_point_map_id: port_point_map_id ? port_point_map_id : "",
+          },
+          {
+            content: content ? content : "",
+          },
+        ],
+      },
+      order: [
+        ["create_time"]
       ],
-    },
-    order: [["create_time"]],
-  })
+    })
     .then((point) => {
       res.send({
         status: 200,
@@ -194,10 +207,15 @@ router.post("/search", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/findAll", (req, res) => {
-  const { pageNum, pageSize } = req.body;
+  const {
+    pageNum,
+    pageSize
+  } = req.body;
   PointModel.findAll({
-    order: [["create_time", "DESC"]],
-  })
+      order: [
+        ["create_time", "DESC"]
+      ],
+    })
     .then((point) => {
       res.send({
         status: 200,
@@ -230,7 +248,9 @@ router.post("/findAll", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { pointIds } = req.body;
+  const {
+    pointIds
+  } = req.body;
   if (!pointIds) {
     return res.send({
       status: 400,
@@ -238,12 +258,12 @@ router.post("/batch/delete", async (req, res) => {
     });
   }
   await PointModel.destroy({
-    where: {
-      id: {
-        [Op.in]: pointIds,
+      where: {
+        id: {
+          [Op.in]: pointIds,
+        },
       },
-    },
-  })
+    })
     .then((point) => {
       if (point) {
         res.send({

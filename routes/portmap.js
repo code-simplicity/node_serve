@@ -6,8 +6,8 @@ const {
   Op
 } = require("sequelize");
 
-// 引入七牛云
-const qiniu = require("qiniu")
+// 引入腾讯云对象存储
+const COS = require('cos-nodejs-sdk-v5');
 
 const router = express.Router();
 
@@ -20,8 +20,6 @@ const utils = require("../utils/utils");
 
 // 引入常量
 const Constants = require("../utils/Constants")
-
-const mac = new qiniu.auth.digest.Mac(Constants.QI_NIU_CONFIG.accessKey, Constants.QI_NIU_CONFIG.secretKey)
 
 // 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
 const dirPath = path.join(__dirname, "..", "public/uploadUrl/image/port-map");
