@@ -44,43 +44,29 @@ router.get("/", function (req, res, next) {
  */
 router.post("/user/add", async (req, res) => {
   // 读取请求参数
-  const {
-    id,
-    password,
-    user_name,
-    roles,
-  } = req.body;
+  const user = req.body;
   // 对密码进行加密入库
-  const passwordMd5 = MD5(password)
-  if (passwordMd5.length !== 32) {
+  user.password = MD5(user.password)
+  if (user.password.length !== 32) {
     return res.send(R.fail("请使用md5进行加密"))
   }
   // 根据id查询用户是否存在
-  const user = await UserModel.findOne({
+  const userInfo = await UserModel.findOne({
     where: {
-      id
+      id: user.id,
     },
   })
   // 不存在该用户，添加用户
-  if (user === null) {
-    const userMd5 = {
-      id: id,
-      user_name: user_name,
-      password: passwordMd5,
-      roles: roles
-    }
-    // 没有密码的返回值
-    const userNoMd5 = {
-      id: id,
-      user_name: user_name,
-      roles: roles
-    }
-
+  if (userInfo === null) {
+    const {
+      password,
+      ...data
+    } = user
     // 保存用户
     UserModel.create({
-      ...userMd5,
+      ...user,
     })
-    return res.send(R.success(userNoMd5, "添加用户成功."))
+    return res.send(R.success(data, "添加用户成功."))
   } else {
     return res.send(
       R.fail("此用户已经存在.")
@@ -140,52 +126,46 @@ router.post("/user/delete", async (req, res) => {
  */
 router.post("/user/login", async (req, res) => {
   try {
-    const {
-      id,
-      password
-    } = req.body;
-    if (!id) {
+    const user = req.body;
+    if (!user.id) {
       return res.send(R.fail("账户不可以为空."))
     }
-    if (!password) {
-      return res.send(R.fail("密码不可以为空."))
+    // 使用md5进行加密
+    user.password = MD5(user.password)
+    if (user.password.length !== 32) {
+      return res.send(R.fail("请使用md5加密密码."))
     }
     const {
       dataValues
     } = await UserModel.findOne({
       where: {
-        id
+        id: user.id
       },
     });
     if (dataValues !== null) {
-      // 使用md5进行加密
-      const passwordMd5 = MD5(password)
       // 比对用户名和密码是否正确
-      if (passwordMd5 !== dataValues.password) {
+      if (user.password !== dataValues.password) {
         return res.send(R.fail("密码不正确."))
       }
-      if (id !== dataValues.id) {
+      if (user.id !== dataValues.id) {
         return res.send(R.fail("用户名不正确."))
       }
       // 传递id，生成token
       const token = await jwtUtils.setToken(dataValues.id);
       // 生成cookie，将token存在cookie中，并且交给浏览器保存
-      res.cookie("node_token", token, {
+      res.cookie("token", token, {
         maxAge: 10 * 60 * 60 * 24,
       });
       // 响应数据中不要携带password，避免被攻击
-      const data = {
-        user_name: dataValues.user_name,
-        id: dataValues.id,
-        roles: dataValues.roles,
-        token: token,
-      };
+      const {
+        password,
+        ...data
+      } = dataValues;
       // 如果用户类型为管理员，就可以登录管理中心
       // 发送响应给前端
       return res.send(R.success(data, "登录成功."))
     }
   } catch (error) {
-    // 登录失败
     return res.send(R.fail("该用户未注册."))
   }
 });
@@ -218,14 +198,10 @@ router.get("/user/info", async (req, res) => {
       },
     });
     if (dataValues !== null) {
-      const data = {
-        user_name: dataValues.user_name,
-        id: dataValues.id,
-        roles: dataValues.roles,
-        score: dataValues.score,
-        create_time: dataValues.create_time,
-        update_time: dataValues.update_time,
-      };
+      const {
+        password,
+        ...data
+      } = dataValues
       return res.send(R.success(data, "获取用户信息成功."))
     } else {
       return res.send(R.fail("获取用户信息失败."))
@@ -252,7 +228,7 @@ router.get("/user/info", async (req, res) => {
 router.get("/user/logout", (req, res) => {
   try {
     // 清除cookie中的token，实现退出
-    res.clearCookie("node_token");
+    res.clearCookie("token");
     return res.send(R.success({}, "退出登录成功."))
   } catch (error) {
     return res.send(R.fail("退出登录失败."))
@@ -344,8 +320,6 @@ router.get("/user/list/search", async (req, res) => {
   }
 });
 
-// TODO:
-
 /**
  * @api {post} /user/update 更新用户信息
  * @apiDescription 更新用户信息
@@ -367,27 +341,34 @@ router.get("/user/list/search", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/update
  * @apiVersion 1.0.0
  */
-router.post("/user/update", (req, res) => {
+router.post("/user/update", async (req, res) => {
   const user = req.body;
-  UserModel.update(user, {
+  if (!user.id) {
+    return res.send(R.fail("请输入用户id."))
+  }
+  // 对密码进行加密
+  user.password = MD5(user.password)
+  if (user.password.length !== 32) {
+    return res.send(R.fail("请使用md5对密码进行加密."))
+  }
+  const [userInfo] = await UserModel.update(
+    user, {
       where: {
         id: user.id,
       },
     })
-    .then((data) => {
-      res.send({
-        status: 200,
-        msg: "更新用户信息成功.",
-        data: data,
-      });
-    })
-    .catch((error) => {
-      console.error("更新用户信息失败.", error);
-      res.send({
-        status: 400,
-        msg: "更新用户信息失败, 请重新尝试.",
-      });
-    });
+  console.log(userInfo)
+  if (userInfo) {
+    const {
+      password,
+      ...data
+    } = user
+    // 修改信息成功
+    return res.send(R.success(data, "用户信息修改成功."))
+  }
+  if (!userInfo) {
+    return res.send(R.fail("修改用户信息失败."))
+  }
 });
 
 /**
@@ -407,45 +388,42 @@ router.post("/user/update", (req, res) => {
  * @apiSampleRequest http://localhost:5050/user/add/score
  * @apiVersion 1.0.0
  */
-router.post("/user/add/score", (req, res) => {
-  const {
-    id,
-    score
-  } = req.body;
-  if (score > 100 || score < 0) {
-    return res.send({
-      status: 400,
-      msg: "得分不能低于0，不能超过100.",
-    });
-  }
-  UserModel.update({
+router.post("/user/add/score", async (req, res) => {
+  try {
+    const {
+      id,
+      score
+    } = req.body;
+    if (score > 100 || score < 0) {
+      return res.send(R.fail(`当前输入得分为${score}：得分不能低于0，不能超过100.`))
+    }
+    // 更新查询
+    const [userInfo] = await UserModel.update({
       score: score,
     }, {
       where: {
         id: id,
       },
     })
-    .then((user) => {
-      if (user) {
-        res.send({
-          status: 200,
-          msg: "当前获得分数：" + score + "分",
-          data: score,
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "得分添加失败，视频未看完或者有其他任务未完成！",
-        });
+    const {
+      dataValues
+    } = await UserModel.findOne({
+      where: {
+        id: id
       }
     })
-    .catch((error) => {
-      console.error("得分添加失败.", error);
-      res.send({
-        status: 400,
-        msg: "得分添加失败，请检查重试！",
-      });
-    });
+    console.log(dataValues)
+    if (userInfo || dataValues.score === score) {
+      return res.send(R.success({
+        score: score
+      }, `当前获得分数：${score}分.`))
+    }
+    if (!userInfo) {
+      return res.send(R.fail("添加得分失败，视频未看完或者有其他任务未完成！"))
+    }
+  } catch (error) {
+    return res.send(R.fail("添加得分失败，视频未看完或者有其他任务未完成！"))
+  }
 });
 
 /**
@@ -467,39 +445,21 @@ router.post("/user/batch/delete", async (req, res) => {
   const {
     userIds
   } = req.body;
-  if (!userIds) {
-    return res.send({
-      status: 400,
-      msg: "userIds不可以为空",
-    });
+  if (userIds.length <= 0) {
+    return res.send(R.fail("userIds不可以为空"))
   }
-  await UserModel.destroy({
-      where: {
-        id: {
-          [Op.in]: userIds,
-        },
+  const user = await UserModel.destroy({
+    where: {
+      id: {
+        [Op.in]: userIds,
       },
-    })
-    .then((user) => {
-      if (user) {
-        res.send({
-          status: 200,
-          msg: "用户批量删除成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "用户批量删除失败.",
-        });
-      }
-    })
-    .catch((err) => {
-      console.error("用户批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "用户批量删除失败.",
-      });
-    });
+    },
+  })
+  if (user) {
+    return res.send(R.success({}, "用户批量删除成功."))
+  } else {
+    return res.send(R.fail("用户批量删除失败."))
+  }
 });
 
 module.exports = router;
