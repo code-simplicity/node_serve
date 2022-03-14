@@ -93,6 +93,9 @@ router.post("/user/delete", async (req, res) => {
   const {
     id
   } = req.body;
+  if (!id) {
+    return res.send(R.fail("id不可以为空."))
+  }
   const user = await UserModel.destroy({
     where: {
       id
@@ -190,6 +193,9 @@ router.get("/user/info", async (req, res) => {
     const {
       id
     } = req.query;
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
+    }
     const {
       dataValues
     } = await UserModel.findOne({
@@ -294,6 +300,15 @@ router.get("/user/list/search", async (req, res) => {
       pageNum,
       pageSize
     } = req.query;
+    if (!user) {
+      return res.send(R.fail("user不可以为空."))
+    }
+    if (!pageNum) {
+      return res.send(R.fail("pageNum不可以为空."))
+    }
+    if (!pageSize) {
+      return res.send(R.fail("pageSize不可以为空."))
+    }
     // 通过id或者user_name查询
     const userInfo = await UserModel.findAll({
       where: {
@@ -395,6 +410,9 @@ router.post("/user/add/score", async (req, res) => {
     } = req.body;
     if (score > 100 || score < 0) {
       return res.send(R.fail(`当前输入得分为${score}：得分不能低于0，不能超过100.`))
+    }
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
     }
     // 更新查询
     const [userInfo] = await UserModel.update({
