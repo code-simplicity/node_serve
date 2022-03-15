@@ -33,7 +33,7 @@ const txCosConfig = {
   SecretKey: "TfZCYdS2MPChvsY0EEzVmob9SWTBesrc",
   // 存储桶名字
   Bucket: "bugdr-project-1305152720",
-  // 存储桶Region可以在COS控制台指定存储桶的概览页查看
+  // 存储桶Region，也就是地点，可以在COS控制台指定存储桶的概览页查看
   Region: "ap-beijing",
 }
 
