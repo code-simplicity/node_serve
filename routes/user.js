@@ -134,7 +134,7 @@ router.post("/user/login", async (req, res) => {
       return res.send(R.fail("账户不可以为空."))
     }
     // 使用md5进行加密
-    user.password = MD5(user.password)
+    // user.password = MD5(user.password)
     if (user.password.length !== 32) {
       return res.send(R.fail("请使用md5加密密码."))
     }
@@ -166,7 +166,10 @@ router.post("/user/login", async (req, res) => {
       } = dataValues;
       // 如果用户类型为管理员，就可以登录管理中心
       // 发送响应给前端
-      return res.send(R.success(data, "登录成功."))
+      return res.send(R.success({
+        token,
+        ...data
+      }, "登录成功."))
     }
   } catch (error) {
     return res.send(R.fail("该用户未注册."))
