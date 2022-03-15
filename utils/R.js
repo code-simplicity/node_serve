@@ -26,7 +26,7 @@ class R {
 
     // 失败
     static fail(errMsg) {
-        return new R(Constants.baseResultCode.FAILED, errMsg)
+        return new R(Constants.baseResultCode.FAILED, {}, errMsg)
     }
 }
 
