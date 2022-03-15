@@ -1450,3 +1450,297 @@ http {
 之后我们就可以通过域名访问到我们的项目了。
 
 最后说明一下，管理端以及门户的api可以换成服务器的ip地址,这样就是直接绑定域名进行访问的。
+
+## 使用腾讯云对象存储，改变视频，图片等文件的存储方式
+
+### 1、实名注册腾讯云，并且激活对象存储的服务
+
+首先是自己在腾讯云实名注册过，如何直接在腾讯云搜索对象存储，这个时候会让开启对象存储的权限，这里就不做演示了。
+
+[对象存储的url地址](https://console.cloud.tencent.com/cos/bucket)
+
+### 2、创建存储桶
+
+访问该[对象存储](https://console.cloud.tencent.com/cos/bucket)的控制台进行`存储桶`的创建，按照下面的图片步骤即可。
+
+![对象存储1](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A81.png)
+
+![对象存储2](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A82.png)
+
+![对象存储3](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A82.png)
+
+之后`存储桶`就创建好了。
+
+### 3、下载COSBrowser对象存储可视化工具
+
+首先可以查看`存储桶`的一些配置，当然这个对象存储前6个月是免费的，有50G的存储额度。过了6个月以后存储需要进行收费，这个可以具体看一下收费标准，也是比较便宜的。
+
+![对象存储4](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A84.png)
+
+下载`COSBrowser`连接如下：
+
+```http
+https://cloud.tencent.com/document/product/436/38103
+```
+
+![对象存储5](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A85.png)
+
+我电脑的是`Windows`版本，就下载了一个，然后这里安装登陆很简单的，按照提示一步一步走就行。
+
+![对象存储6](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A86.png)
+
+### 使用Node.js实现文件上传到对象存储
+
+这里为什么使用`Node.js`，因为我毕设后端就是`Node.js`写的。
+
+首先将`cos-nodejs-sdk-v5`下来加入到项目依赖包中，直接使用命令：
+
+```sh
+npm install cos-nodejs-sdk-v5 --save
+```
+
+然后查看项目依赖：
+
+![对象存储7](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A87.png)
+
+#### 配置 SecretId、SecretKey
+
+去[api秘钥管理获取](https://console.cloud.tencent.com/cam/capi)`SecretId`、`SecretKey`。
+
+![对象存储8](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A88.png)
+
+先将这些配置抽取成一个对象存储起来，方便全局调用。
+
+```js
+// 腾讯云对象存储配置
+const txCosConfig = {
+  // id
+  SecretId: "xxxx",
+  // key
+  SecretKey: "xxxx",
+  // 存储桶名字
+  Bucket: "bugdr-project-1305152720",
+  // 存储桶Region，也就是地点，可以在COS控制台指定存储桶的概览页查看
+  Region: "ap-beijing",
+}
+```
+
+#### 上传文件到指定文件夹下面
+
+```js
+// portmap.js
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const {
+  Op
+} = require("sequelize");
+const router = express.Router();
+// 引入腾讯云对象存储
+const COS = require('cos-nodejs-sdk-v5');
+// 表单上传文件
+const multer = require("multer");
+// 一些工具
+const utils = require("../utils/utils");
+// 统一返回结果
+const R = require("../utils/R")
+
+// 引入常量
+const Constants = require("../utils/Constants")
+
+// 创建对象存储实例
+const cos = new COS({
+  SecretId: Constants.txCosConfig.SecretId,
+  SecretKey: Constants.txCosConfig.SecretKey,
+})
+
+// 上传的存储路径，后面需要删除
+const dirPath = path.join("./");
+const upload = multer({
+  dest: dirPath
+});
+
+// 创建cos上传存储的位置
+const uploadUrl = "node-serve/port-map/"
+
+/**
+ * 上传港口地图
+ */
+router.post("/upload", upload.single("image"), async (req, res) => {
+  /**
+   * filename：是文件名的hash，"8e7c4c36a823cd4bd9508167cfc679a6"
+   * mimetype 文件类型：'image/png'
+   * originalname：原来的名字
+   */
+  const {
+    filename,
+    mimetype,
+    originalname
+  } = req.file
+  // 图片重命名
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("图片重命名失败."))
+    } else {
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 3,
+      }
+      let result = {}
+      // 上传任务的回调
+      let taskStatus = ""
+      // 上传进度的对象
+      let onHashProgress = {}
+      let onProgress = {}
+      cos.sliceUploadFile({
+        ...params,
+        // 上传任务创建时的回调函数，返回一个 taskId，
+        // 唯一标识上传任务，可用于上传任务的取消（cancelTask），停止（pauseTask）和重新开始（restartTask）
+        onTaskReady: (taskId) => {
+          taskStatus = taskId
+        },
+        // 计算文件 MD5 值的进度回调函数，回调参数为进度对象 progressData
+        onHashProgress: (progressData) => {
+          onHashProgress = progressData
+        },
+        // 上传文件的进度回调函数，回调参数为进度对象 progressData
+        onProgress: (progressData) => {
+          onProgress = progressData
+        }
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("图片上传失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            // 保存图片信息到相关表格中
+            result = {
+              taskStatus,
+              onHashProgress: onHashProgress,
+              onProgress: onProgress
+            }
+            const {
+              dataValues
+            } = await PortMapModel.create({
+              url: data.Location,
+              path: data.Key,
+              type: mimetype,
+              name: originalname,
+            })
+            if (dataValues !== null) {
+              return res.send(R.success({
+                result,
+                ...data
+              }, "图片上传成功."))
+            } else {
+              return res.send(R.fail("图片上传失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("图片上传失败."))
+        }
+      })
+    }
+  });
+});
+```
+
+以上就是一个图片上传的代码，基本是就是调用官方给的api，核心代码主要是这些
+
+```js
+// 引入腾讯云对象存储
+const COS = require('cos-nodejs-sdk-v5');
+
+// 存储路径
+const dirPath = path.join("./");
+const upload = multer({
+  dest: dirPath
+});
+
+// 创建cos上传存储的位置
+const uploadUrl = "node-serve/port-map/"
+
+// 上传文件的路径
+const localFile = dirPath + originalname
+const key = uploadUrl + originalname
+
+// 上传文件的路径
+const localFile = dirPath + originalname
+const key = uploadUrl + originalname
+// 腾讯云上传文件
+const params = {
+  Bucket: Constants.txCosConfig.Bucket,
+  Region: Constants.txCosConfig.Region,
+  // 上传文件执行的目录，作为key存在
+  Key: key,
+  // 上传文件路径
+  FilePath: localFile,
+  // 表示文件大小超出一个数值时使用分块上传
+  SliceSize: 1024 * 1024 * 3,
+}
+let result = {}
+// 上传任务的回调
+let taskStatus = ""
+// 上传进度的对象
+let onHashProgress = {}
+let onProgress = {}
+cos.sliceUploadFile({
+  ...params,
+  // 上传任务创建时的回调函数，返回一个 taskId，
+  // 唯一标识上传任务，可用于上传任务的取消（cancelTask），停止（pauseTask）和重新开始（restartTask）
+  onTaskReady: (taskId) => {
+    taskStatus = taskId
+  },
+  // 计算文件 MD5 值的进度回调函数，回调参数为进度对象 progressData
+  onHashProgress: (progressData) => {
+    onHashProgress = progressData
+  },
+  // 上传文件的进度回调函数，回调参数为进度对象 progressData
+  onProgress: (progressData) => {
+    onProgress = progressData
+  }
+}, async (err, data) => {
+  try {
+    if (err) {
+      return res.send(R.fail("图片上传失败."))
+    } else {
+      // 首先删除上传到本地的文件
+      fs.unlinkSync(localFile)
+      // 保存图片信息到相关表格中
+      result = {
+        taskStatus,
+        onHashProgress: onHashProgress,
+        onProgress: onProgress
+      }
+      console.log("data", data)
+    }
+  } catch (error) {
+    return res.send(R.fail("图片上传失败."))
+  }
+})
+```
+
+具体参数说明以及需要什么格式的参数，请查看[官方文档(https://cloud.tencent.com/document/product/436/64980)]
+
+之后运行一下这个接口，然后发送请求：
+
+![对象存储9](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A89.png)
+
+然后去`node-serve/port-map/`文件夹下查看是否存在该图片：
+
+![对象存储10](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A810.png)
+
+这下对象存储就成功了，当涉及到数据库的时候，直接将返回的`Location`保存在数据库相关字段中，前端请求就可以获取到相应的图片了。
+
+![对象存储11](https://bugdr-project-1305152720.cos.ap-beijing.myqcloud.com/code-images/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A811.png)
