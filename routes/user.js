@@ -16,7 +16,7 @@ const utils = require("../utils/utils");
 
 const R = require("../utils/R")
 
-/* GET home page. */
+/* GET ho page. */
 router.get("/", function (req, res, next) {
   res.render("index", {
     title: "Express",
