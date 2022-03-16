@@ -52,6 +52,7 @@ router.post("/upload", upload.single("image"), async (req, res) => {
     mimetype,
     originalname
   } = req.file
+  console.log(req.file)
   // 图片重命名
   await fs.rename(filename, originalname, (error) => {
     if (error) {
@@ -108,7 +109,7 @@ router.post("/upload", upload.single("image"), async (req, res) => {
             const {
               dataValues
             } = await PortMapModel.create({
-              url: data.Location,
+              url: `http://${data.Location}`,
               path: data.Key,
               type: mimetype,
               name: originalname,
@@ -266,7 +267,7 @@ router.post("/update", upload.single("image"), async (req, res) => {
             fs.unlinkSync(localFile)
             // 保存图片信息到相关表格中
             const [portmap] = await PortMapModel.update({
-              url: data.Location,
+              url: `http://${data.Location}`,
               path: data.Key,
               type: mimetype,
               name: originalname,
@@ -398,9 +399,7 @@ router.post("/batch/delete", async (req, res) => {
  */
 router.get("/search", async (req, res) => {
   try {
-    // 查询图片
-    // 首先查询存储的位置，
-    // 通过文件流的形式将图片读写
+    // 使用对象存储返回url地址
     const {
       id
     } = req.query;
@@ -415,7 +414,9 @@ router.get("/search", async (req, res) => {
       },
     })
     if (dataValues !== null) {
-      return res.send(R.success(dataValues, "查询港口点位图成功."))
+      return res.send(R.success({
+        ...dataValues
+      }, "查询港口点位图成功."))
     } else {
       return res.send(R.fail("查询港口点位图失败."))
     }

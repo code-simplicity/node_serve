@@ -361,6 +361,7 @@ router.get("/user/list/search", async (req, res) => {
  */
 router.post("/user/update", async (req, res) => {
   const user = req.body;
+  // 这里对id进行一个浅拷贝，
   if (!user.id) {
     return res.send(R.fail("请输入用户id."))
   }
@@ -372,7 +373,7 @@ router.post("/user/update", async (req, res) => {
   const [userInfo] = await UserModel.update(
     user, {
       where: {
-        id: user.id,
+        id: user.oldId,
       },
     })
   if (userInfo) {
@@ -382,8 +383,7 @@ router.post("/user/update", async (req, res) => {
     } = user
     // 修改信息成功
     return res.send(R.success(data, "用户信息修改成功."))
-  }
-  if (!userInfo) {
+  } else {
     return res.send(R.fail("修改用户信息失败."))
   }
 });
