@@ -78,7 +78,8 @@ router.get("/export", (req, res) => {
       },
     ],
   };
-  return res.send(R.success(xlsx.build(excelData, optionArr), "生成excle模板成功."));
+  // 返回模板信息
+  return res.send(xlsx.build(excelData, optionArr));
 });
 
 /**
@@ -127,7 +128,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
         // 使用模板插入数据
         UserModel.bulkCreate([addData]);
       });
-      return res.send(R.success({}, "成功导入excel到数据库."));
+      return res.send(R.success(addData, "成功导入excel到数据库."));
     } else {
       // 不是的话,返回给前端错误状态
       return res.send(R.fail("模板匹配错误，请检查关键字."));
@@ -164,8 +165,10 @@ router.post("/export/user", async (req, res) => {
       },
     },
   });
+  console.log("user", user)
   if (user.length > 0) {
     const exportData = JSON.parse(JSON.stringify(user));
+    console.log("exportData", exportData)
     const excelData = [{
       name: "用户模板.xlsx",
       data: [
@@ -213,12 +216,10 @@ router.post("/export/user", async (req, res) => {
       for (const key in item) {
         exportArr.push(item[key]);
       }
-      // 去掉表头
-      exportArr.shift();
       //  装载数据
       excelData[0].data.push(exportArr);
     });
-    return res.send(R.success(xlsx.build(excelData, optionArr), "用户数据导出成功."));
+    return res.send(xlsx.build(excelData, optionArr));
   } else {
     return res.send(R.fail("用户数据导出失败，请勾选对应的表格数据."));
   }
