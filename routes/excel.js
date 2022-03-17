@@ -97,42 +97,43 @@ router.get("/export", (req, res) => {
  * @apiSampleRequest http://localhost:5050/excel/upload
  * @apiVersion 1.0.0
  */
-router.post("/upload", upload.single("file"), (req, res) => {
+router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     // 重命名文件夹
-    fs.rename(
+    await fs.rename(
       // 上传文件路径，这里可以修改，后期上线改为服务器的路径
       req.file.path,
       req.file.destination + "/" + "用户模板.xlsx",
       (err) => {
         if (err) {
           return res.send(R.fail("失败."))
+        } else {
+          // 解析模板,返回对象形式的键值对
+          const excelObj = xlsx.parse("../public/upload/用户模板.xlsx");
+          const dataArr = excelObj[0].data;
+          // 添加的数据
+          const addData = {};
+          // 判断是不是使用的指定模板导入的
+          if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态,得分") {
+            // 删除二位数组第一项，也就是表头数据
+            dataArr.shift();
+            // 遍历
+            dataArr.map(async (item) => {
+              excelHead.map((key, index) => {
+                // 先对password进行一个加密，再添加到数组中，如果这个key为password，那么对该值进行加密
+                addData[key] = key === "password" ? MD5(item[index]) : item[index];
+              });
+              // 使用模板插入数据
+              await UserModel.bulkCreate([addData]);
+            });
+            return res.send(R.success(addData, "成功导入excel到数据库."));
+          } else {
+            // 不是的话,返回给前端错误状态
+            return res.send(R.fail("模板匹配错误，请检查关键字."));
+          }
         }
       }
     );
-    // 解析模板,返回对象形式的键值对
-    const excelObj = xlsx.parse("../public/upload/用户模板.xlsx");
-    const dataArr = excelObj[0].data;
-    // 添加的数据
-    const addData = {};
-    // 判断是不是使用的指定模板导入的
-    if (excelObj[0].data[0].toString() === "学号,姓名,密码,角色,状态,得分") {
-      // 删除二位数组第一项，也就是表头数据
-      dataArr.shift();
-      // 遍历
-      dataArr.map((item) => {
-        excelHead.map((key, index) => {
-          // 先对password进行一个加密，再添加到数组中，如果这个key为password，那么对该值进行加密
-          addData[key] = key === "password" ? MD5(item[index]) : item[index];
-        });
-        // 使用模板插入数据
-        UserModel.bulkCreate([addData]);
-      });
-      return res.send(R.success(addData, "成功导入excel到数据库."));
-    } else {
-      // 不是的话,返回给前端错误状态
-      return res.send(R.fail("模板匹配错误，请检查关键字."));
-    }
   } catch (error) {
     return res.send(R.fail("导入异常, 请重新尝试."));
   }
