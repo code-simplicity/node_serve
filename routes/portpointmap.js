@@ -83,7 +83,7 @@ router.post("/upload", upload.single("image"), async (req, res) => {
           const {
             dataValues
           } = await PortPointMapModel.create({
-            url: data.Location,
+            url: `http://${data.Location}`,
             path: data.Key,
             type: mimetype,
             name: originalname,
@@ -190,26 +190,12 @@ router.post("/findAll", async (req, res) => {
       ],
     });
     if (result.length > 0) {
-      if (pageNum && pageSize) {
-        res.send({
-          status: 200,
-          msg: "查询成功.",
-          data: utils.pageFilter(result, pageNum, pageSize),
-        });
-      } else {
-        res.send({
-          status: 200,
-          msg: "查询成功.",
-          data: result,
-        });
-      }
+      return res.send(R.success(utils.pageFilter(result, pageNum, pageSize), "港口点位图全部显示成功."))
+    } else {
+      return res.send(R.fail("不存在港口点位图."))
     }
   } catch (error) {
-    console.error("查询失败.", error);
-    res.send({
-      status: 400,
-      msg: "查询失败.",
-    });
+    return res.send(R.fail("不存在港口点位图."))
   }
 });
 
@@ -231,158 +217,120 @@ router.post("/findAll", async (req, res) => {
  */
 router.get("/delete", async (req, res) => {
   const {
-    id
+    id,
+    name
   } = req.query;
-  // 获取路径
-  const data = await PortPointMapModel.findOne({
-    where: {
-      id,
-    },
-  });
-  // 删除存储在磁盘的图片
-  fs.unlinkSync(data.path);
-  PortPointMapModel.destroy({
-      where: {
-        id: id,
-      },
-    })
-    .then((img) => {
-      if (img) {
-        res.send({
-          status: 200,
-          msg: "删除图片成功.",
-        });
-      } else {
-        res.send({
-          status: 200,
-          msg: "图片不存在或者已经删除.",
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("删除图片失败.", error);
-      res.send({
-        status: 400,
-        msg: "删除图片失败.",
-      });
-    });
-});
-
-router.post("/update", upload.single("image"), async (req, res) => {
-  const {
-    name,
-    total,
-    index,
-    size,
-    hash
-  } = req.body;
-  // 判断是否有文件
-  // 创建临时的文件块
-  const chunksPath = path.join(dirPath, hash, "/");
-  if (!fs.existsSync(chunksPath)) {
-    await utils.mkdirsSync(chunksPath);
+  if (!id) {
+    return res.send(R.fail("id不可以为空."))
   }
-  // 文件重命名
-  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
-  res.send({
-    status: 200,
-    msg: "分片文件上传成功",
-  });
+  if (!name) {
+    return res.send(R.fail("图片名称不可以为空."))
+  }
+  // 删除文件的路径
+  const key = uploadUrl + name
+  // 腾讯云上传文件
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // 上传文件执行的目录，作为key存在
+    Key: key,
+  }
+  cos.deleteObject({
+    ...params
+  }, async (err, data) => {
+    if (err) {
+      return res.send(R.fail("港口点位图删除失败."))
+    } else {
+      const portpointmap = await PortPointMapModel.destroy({
+        where: {
+          id,
+        }
+      })
+      if (portpointmap) {
+        return res.send(R.success(data, "港口点位图删除成功."))
+      } else {
+        return res.send(R.fail("港口点位图删除失败."))
+      }
+    }
+  })
 });
 
 /**
- * @api {post} /portpointmap/update 修改图片信息
- * @apiDescription 修改图片信息
- * @apiName 修改图片信息
- * @apiGroup PortPointMap
- * @apiBody {String} id 图片id
- * @apiBody {String} water_level 水位
- * @apiBody {String} wave_direction 波浪方向
- * @apiBody {String} embank_ment 堤坝布置位置
- * @apiSuccess {json} result
- * @apiSuccessExample {json} Success-Response:
- *  {
- *      "status" : "200",
- *      "msg": "图片修改成功.",
- *      "data": img
- *  }
- * @apiSampleRequest http://localhost:5050/portpointmap/update
- * @apiVersion 1.0.0
+ * 更新港口点位图
  */
-// 分片合并
-router.post("/update/merge_chunks", async (req, res) => {
+router.post("/update", upload.single("image"), async (req, res) => {
   const {
-    size,
-    name,
-    total,
-    hash,
-    type,
+    id,
     water_level,
     wave_direction,
-    embank_ment,
-    id,
-  } = req.body;
-  // 根据hash值，获取分片文件。
-  // 创建存储文件
-  // 合并
-  const chunksPath = path.join(dirPath, hash, "/");
-  const filePath = path.join(dirPath, name);
-  // 读取所有的chunks,文件名存储在数组中,
-  const chunks = fs.readdirSync(chunksPath);
-  console.log("chunks", chunks);
-  // 创建文件存储
-  fs.writeFileSync(filePath, "");
-  if (chunks.length !== total || chunks.length === 0) {
-    res.send.end({
-      status: 400,
-      msg: "切片文件数量不符合",
-    });
-    return;
-  }
-  for (let i = 0; i < total; i++) {
-    // 追加写入文件
-    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
-    // 删除本次使用的chunks
-    fs.unlinkSync(chunksPath + hash + "-" + i);
-  }
-  // 同步目录
-  fs.rmdirSync(chunksPath);
-  // 先获取到原来的，再删除
-  const data = await PortMapModel.findOne({
-    where: {
-      id,
-    },
-  });
-  fs.unlinkSync(data.path);
-  // 再修改相关信息
-  await PortPointMapModel.update({
-      url: name,
-      path: filePath,
-      type: type,
-      name: name,
-      water_level: water_level,
-      wave_direction: wave_direction,
-      embank_ment: embank_ment,
-    }, {
-      where: {
-        id,
-      },
-    })
-    .then((img) => {
-      if (img) {
-        res.send({
-          status: 200,
-          msg: "港修改港口点位图信息成功.",
-        });
+    embank_ment
+  } = req.body
+  /**
+   * filename：是文件名的hash，"8e7c4c36a823cd4bd9508167cfc679a6"
+   * mimetype 文件类型：'image/png'
+   * originalname：原来的名字
+   */
+  const {
+    filename,
+    mimetype,
+    originalname
+  } = req.file
+  // 图片重命名
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("图片重命名失败."))
+    } else {
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 3,
       }
-    })
-    .catch((error) => {
-      console.error("修改图片信息失败.", error);
-      res.send({
-        status: 200,
-        msg: "修改图片信息失败.",
-      });
-    });
+      cos.sliceUploadFile({
+        ...params
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("港口点位地图上传失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            // 保存图片信息到相关表格中
+            const [portpointmap] = await PortPointMapModel.update({
+              url: `http://${data.Location}`,
+              path: data.Key,
+              type: mimetype,
+              name: originalname,
+              water_level: water_level,
+              wave_direction: wave_direction,
+              embank_ment: embank_ment,
+            }, {
+              where: {
+                id,
+              },
+            })
+            if (portpointmap) {
+              return res.send(R.success({
+                ...data
+              }, "港口点位图修改成功."))
+            } else {
+              return res.send(R.fail("港口点位图修改失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("港口点位图修改失败."))
+        }
+      })
+    }
+  });
 });
 
 /**
@@ -401,42 +349,77 @@ router.post("/update/merge_chunks", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
+
+  // paths为存储的key，这个和cos存储的Key进行对比
   const {
-    portpointmapIds
+    portpointmapIds,
+    paths
   } = req.body;
-  if (!portpointmapIds) {
-    return res.send({
-      status: 400,
-      msg: "portpointmapIds不可以为空",
-    });
+  if (portpointmapIds.length <= 0) {
+    return res.send(R.fail("portmapIds不可以为空."))
   }
-  await PortPointMapModel.destroy({
-      where: {
-        id: {
-          [Op.in]: portpointmapIds,
-        },
-      },
-    })
-    .then((img) => {
-      if (img) {
-        res.send({
-          status: 200,
-          msg: "港口点位图批量删除成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "港口点位图批量删除失败.",
-        });
+  if (paths.length <= 0) {
+    return res.send(R.fail("paths不可以为空."))
+  }
+  /**
+   * 首先先查看指定目录之下的所有文件，然后遍历文件之后进行，通过图片名字进行删除
+   * 其次就是在通过portmapIds对数据库数据进行删除
+   */
+  // 腾讯云上传文件
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // Prefix表示列出的object的key以prefix开始，非必须
+    Prefix: uploadUrl,
+  }
+  cos.getBucket({
+    ...params
+  }, (err, data) => {
+    if (err) {
+      return res.send(R.fail("获取图片列表失败."))
+    } else {
+      // 需要删除的对象
+      const objects = data.Contents.map((item) => {
+        // 这里判断输入的paths的值和item.Key是否相等
+        // 返回一个布尔值，如果相等，那么就装填数据
+        const isEquality = paths.every((value) => {
+          if (value === item.Key) {
+            return true
+          }
+        })
+        return isEquality ? {
+          Key: item.Key
+        } : ""
+      })
+      const paramsData = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 要删除的对象列表
+        Objects: objects,
       }
-    })
-    .catch((err) => {
-      console.error("港口点位图批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "港口点位图批量删除失败.",
-      });
-    });
+      cos.deleteMultipleObject({
+        ...paramsData
+      }, async (delError, delData) => {
+        if (delError) {
+          return res.send(R.fail("港口点位图批量删除失败."))
+        } else {
+          // 删除数据库数据
+          const portmap = await PortPointMapModel.destroy({
+            where: {
+              id: {
+                [Op.in]: portpointmapIds,
+              },
+            },
+          })
+          if (portmap) {
+            return res.send(R.success(delData, "批量删除港口点位图成功."))
+          } else {
+            return res.send(R.fail("港口点位图批量删除失败."))
+          }
+        }
+      })
+    }
+  })
 });
 
 /**
@@ -455,49 +438,32 @@ router.post("/batch/delete", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portpointmap/search
  * @apiVersion 1.0.0
  */
-router.get("/search", (req, res) => {
-  // 查询图片
-  // 首先查询存储的位置，
-  // 通过文件流的形式将图片读写
-  const {
-    id
-  } = req.query;
-  PortPointMapModel.findOne({
+router.get("/search", async (req, res) => {
+  try {
+    // 使用对象存储返回url地址
+    const {
+      id
+    } = req.query;
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
+    }
+    const {
+      dataValues
+    } = await PortPointMapModel.findOne({
       where: {
         id,
       },
     })
-    .then((img) => {
-      if (img) {
-        // 设置响应头，告诉浏览器这是图片
-        res.writeHead(200, {
-          "Content-Type": "image/png"
-        });
-        // 创建一个读取图片流
-        const stream = fs.createReadStream(img.path);
-        // 声明一个存储数组
-        const resData = [];
-        if (stream) {
-          stream.on("data", (chunk) => {
-            resData.push(chunk);
-          });
-          stream.on("end", () => {
-            // 把流存储到缓存池
-            const finalData = Buffer.concat(resData);
-            // 响应，写数据
-            res.write(finalData);
-            res.end();
-          });
-        }
-      }
-    })
-    .catch((error) => {
-      console.error("查询港口点位图失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询港口点位图失败.",
-      });
-    });
+    if (dataValues !== null) {
+      return res.send(R.success({
+        ...dataValues
+      }, "查询港口点位图成功."))
+    } else {
+      return res.send(R.fail("查询港口点位图成功."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询港口点位图失败."))
+  }
 });
 
 module.exports = router;
