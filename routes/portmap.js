@@ -52,7 +52,6 @@ router.post("/upload", upload.single("image"), async (req, res) => {
     mimetype,
     originalname
   } = req.file
-  console.log(req.file)
   // 图片重命名
   await fs.rename(filename, originalname, (error) => {
     if (error) {
