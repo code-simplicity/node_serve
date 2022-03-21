@@ -2,52 +2,41 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
+
+// 导入暴露的模型
+const WaveFormsModel = require("../models/WaveFormsModel");
+
+// 引入腾讯云对象存储
+const COS = require('cos-nodejs-sdk-v5');
 
 const router = express.Router();
 
 const multer = require("multer");
 
 const utils = require("../utils/utils");
-// const { uploadUrl } = require("../config/config");
 
-// 导入暴露的模型
-const WaveFormsModel = require("../models/WaveFormsModel");
+const R = require("../utils/R")
 
-// 文件上传到服务器的路径,存储在本地的
+// 引入常量
+const Constants = require("../utils/Constants")
 
-// 存储在服务器上的,/root/docker/Graduation-Project/uploadUrl
-// const dirPath = uploadUrl + "/image/wave-forms/" + utils.getNowFormatDate();
-const dirPath = path.join(
-  __dirname,
-  "..",
-  "public/uploadUrl/image/wave-forms/" + utils.getNowFormatDate()
-);
+// 创建对象存储实例
+const cos = new COS({
+  SecretId: Constants.txCosConfig.SecretId,
+  SecretKey: Constants.txCosConfig.SecretKey,
+})
 
-// 配置规则 配置目录/日期/原名称.类型
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdir(dirPath, { recursive: true }, function (err) {
-        if (err) {
-          console.log(err);
-        } else {
-          cb(null, dirPath);
-        }
-      });
-    } else {
-      cb(null, dirPath);
-    }
-  },
-  filename: function (req, file, cb) {
-    console.log("filename()", file);
-    cb(null, file.originalname);
-  },
-});
-
+// 存储路径
+const dirPath = path.join("./");
 const upload = multer({
-  storage: storage,
+  dest: dirPath
 });
+
+// 创建cos上传存储的位置
+const uploadUrl = `node-serve/wave-forms/${utils.getNowFormatDate()}`
 
 /**
  * @api {post} /waveforms/upload  上传波形图
@@ -66,77 +55,71 @@ const upload = multer({
  * @apiSampleRequest http://localhost:5050/waveforms/upload
  * @apiVersion 1.0.0
  */
-router.post("/upload", upload.single("image"), (req, res) => {
-  const { point_id } = req.body;
+router.post("/upload", upload.single("image"), async (req, res) => {
+  const {
+    point_id
+  } = req.body;
   if (!point_id) {
-    return res.send({
-      status: 400,
-      msg: "请选择对应的点位id.",
-    });
+    return res.send(R.fail("请选择对应的点位id."))
   }
   // 判断是否有文件
   const file = req.file;
   console.log(`file`, file);
-  if (file === null) {
-    return res.send({
-      status: 400,
-      msg: "图片不可以为空.",
-    });
-  }
-  // 获取文件类型是image/png还是其他
-  const fileTyppe = file.mimetype;
-  // 获取图片相关数据，比如文件名称，文件类型
-  const extName = path.extname(file.path);
-  // 去掉拓展名的一点
-  const extNameOut = extName.substr(1);
-  // 返回文件的类型
-  const type = utils.getType(fileTyppe, extNameOut);
-  if (type === null) {
-    res.send({
-      status: 400,
-      msg: "不支持该类型的图片.",
-    });
-    return;
-  }
-  // 先读取这个文件
-  fs.readFile(file.path, "base64", function (err, data) {
-    if (err) {
-      return;
+  const {
+    filename,
+    mimetype,
+    originalname
+  } = req.file
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("波形图重命名失败."))
     } else {
-      fs.writeFile(file.path, data, "base64", function (err) {
-        if (err) {
-          return;
-        } else {
-          console.log("图片写入成功");
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 5,
+      }
+      cos.sliceUploadFile({
+        ...params
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("波形图上传失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            const {
+              dataValues
+            } = await WaveFormsModel.create({
+              point_id: point_id,
+              url: `http://${data.Location}`,
+              path: data.Key,
+              type: mimetype,
+              name: originalname,
+            })
+            if (dataValues !== null) {
+              return res.send(R.success({
+                ...data
+              }, "波形图上传成功."))
+            } else {
+              return res.send(R.fail("波形图上传失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("波形图上传失败."))
         }
-      });
-    }
-  });
-  try {
-    WaveFormsModel.create({
-      point_id: point_id,
-      url: file.originalname,
-      path: file.path,
-      type: fileTyppe,
-      name: file.originalname,
-    })
-      .then((result) => {
-        res.send({
-          status: 200,
-          msg: "图片上传服务器成功.",
-          data: result,
-        });
       })
-      .catch((error) => {
-        console.error("图片上传失败.", error);
-        res.send({
-          status: 400,
-          msg: "图片上传失败.",
-        });
-      });
-  } catch (error) {
-    console.error(err);
-  }
+    }
+  })
 });
 
 /**
@@ -156,7 +139,9 @@ router.post("/upload", upload.single("image"), (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/delete", async (req, res) => {
-  const { id } = req.query;
+  const {
+    id
+  } = req.query;
   // 获取路径
   const data = await WaveFormsModel.findOne({
     where: {
@@ -166,10 +151,10 @@ router.get("/delete", async (req, res) => {
   // 删除存储在磁盘的图片
   fs.unlinkSync(data.path);
   WaveFormsModel.destroy({
-    where: {
-      id: id,
-    },
-  })
+      where: {
+        id: id,
+      },
+    })
     .then((result) => {
       res.send({
         status: 200,
@@ -205,7 +190,10 @@ router.get("/delete", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/update", upload.single("image"), async (req, res) => {
-  const { point_id, id } = req.body;
+  const {
+    point_id,
+    id
+  } = req.body;
   const file = req.file;
   if (!point_id) {
     return res.send({
@@ -229,20 +217,17 @@ router.post("/update", upload.single("image"), async (req, res) => {
   // 删除存储在磁盘的图片
   fs.unlinkSync(data.path);
   fs.unlinkSync(data.path);
-  await WaveFormsModel.update(
-    {
+  await WaveFormsModel.update({
       point_id: point_id,
       url: file.originalname,
       path: file.path,
       type: file.mimetype,
       name: file.originalname,
-    },
-    {
+    }, {
       where: {
         id: id,
       },
-    }
-  )
+    })
     .then((result) => {
       if (result) {
         res.send({
@@ -277,12 +262,14 @@ router.post("/update", upload.single("image"), async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/search/point_id", (req, res) => {
-  const { point_id } = req.query;
+  const {
+    point_id
+  } = req.query;
   WaveFormsModel.findOne({
-    where: {
-      point_id: point_id,
-    },
-  })
+      where: {
+        point_id: point_id,
+      },
+    })
     .then((result) => {
       res.send({
         status: 200,
@@ -317,10 +304,15 @@ router.get("/search/point_id", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/findAll", async (req, res) => {
-  const { pageNum, pageSize } = req.body;
+  const {
+    pageNum,
+    pageSize
+  } = req.body;
   await WaveFormsModel.findAll({
-    order: [["create_time", "DESC"]],
-  })
+      order: [
+        ["create_time", "DESC"]
+      ],
+    })
     .then((result) => {
       res.send({
         status: 200,
@@ -353,7 +345,9 @@ router.post("/findAll", async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { waveformsIds } = req.body;
+  const {
+    waveformsIds
+  } = req.body;
   if (!waveformsIds) {
     return res.send({
       status: 400,
@@ -373,12 +367,12 @@ router.post("/batch/delete", async (req, res) => {
     fs.unlinkSync(item.path);
   });
   await WaveFormsModel.destroy({
-    where: {
-      id: {
-        [Op.in]: waveformsIds,
+      where: {
+        id: {
+          [Op.in]: waveformsIds,
+        },
       },
-    },
-  })
+    })
     .then((result) => {
       if (result) {
         res.send({
@@ -421,16 +415,20 @@ router.get("/search", (req, res) => {
   // 查询图片
   // 首先查询存储的位置，
   // 通过文件流的形式将图片读写
-  const { id } = req.query;
+  const {
+    id
+  } = req.query;
   WaveFormsModel.findOne({
-    where: {
-      id,
-    },
-  })
+      where: {
+        id,
+      },
+    })
     .then((img) => {
       if (img) {
         // 设置响应头，告诉浏览器这是图片
-        res.writeHead(200, { "Content-Type": "image/png" });
+        res.writeHead(200, {
+          "Content-Type": "image/png"
+        });
         // 创建一个读取图片流
         const stream = fs.createReadStream(img.path);
         // 声明一个存储数组
