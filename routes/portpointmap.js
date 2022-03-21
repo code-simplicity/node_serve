@@ -186,7 +186,7 @@ router.post("/findAll", async (req, res) => {
     } = req.body;
     const result = await PortPointMapModel.findAll({
       order: [
-        ["create_time", "DESC"]
+        ["create_time"]
       ],
     });
     if (result.length > 0) {
