@@ -208,7 +208,7 @@ router.post("/findAll", async (req, res) => {
     if (choose.length > 0) {
       return res.send(R.success(utils.pageFilter(choose, pageNum, pageSize), "查询内容成功."))
     } else {
-      return res.send(R.success(utils.pageFilter(choose, pageNum, pageSize), "目前没有内容."))
+      return res.send(R.fail(utils.pageFilter(choose, pageNum, pageSize), "目前没有内容."))
     }
   } catch (error) {
     return res.send(R.fail("查询内容失败."))
