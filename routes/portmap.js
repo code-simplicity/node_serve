@@ -416,12 +416,12 @@ router.get("/search", async (req, res) => {
     if (dataValues !== null) {
       return res.send(R.success({
         ...dataValues
-      }, "查询港口点位图成功."))
+      }, "查询港口地图成功."))
     } else {
-      return res.send(R.fail("查询港口点位图失败."))
+      return res.send(R.fail("查询港口地图失败."))
     }
   } catch (error) {
-    return res.send(R.fail("查询港口点位图失败."))
+    return res.send(R.fail("查询港口地图失败."))
   }
 });
 
