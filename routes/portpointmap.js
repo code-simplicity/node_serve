@@ -141,7 +141,7 @@ router.post("/search", async (req, res) => {
   req.body;
   const portpointmap = await PortPointMapModel.findAll({
     where: {
-      [Op.and]: [{
+      [Op.or]: [{
           water_level: water_level ? water_level : "",
         },
         {
@@ -154,9 +154,9 @@ router.post("/search", async (req, res) => {
     },
   })
   if (portpointmap.length > 0) {
-    return res.send(R.success(utils.pageFilter(portpointmap, pageNum, pageSize), "查询港口地图成功."))
+    return res.send(R.success(utils.pageFilter(portpointmap, pageNum, pageSize), "查询港口点位图成功."))
   } else {
-    return res.send(R.fail("查询港口地图失败."))
+    return res.send(R.fail("查询港口点位图失败."))
   }
 });
 
