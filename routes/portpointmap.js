@@ -381,15 +381,14 @@ router.post("/batch/delete", async (req, res) => {
       // 需要删除的对象
       const objects = data.Contents.map((item) => {
         // 这里判断输入的paths的值和item.Key是否相等
-        // 返回一个布尔值，如果相等，那么就装填数据
-        const isEquality = paths.every((value) => {
-          if (value === item.Key) {
-            return true
+        const result = paths.map((value) => {
+          if (item.Key === value) {
+            return {
+              Key: value
+            }
           }
         })
-        return isEquality ? {
-          Key: item.Key
-        } : ""
+        return result
       })
       const paramsData = {
         Bucket: Constants.txCosConfig.Bucket,
