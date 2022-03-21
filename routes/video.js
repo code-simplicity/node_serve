@@ -2,119 +2,140 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+// 引入腾讯云对象存储
+const COS = require('cos-nodejs-sdk-v5');
 
 const router = express.Router();
 
 const multer = require("multer");
 
 const VideoModel = require("../models/VideoModel");
-const { Op } = require("sequelize");
+const {
+  Op
+} = require("sequelize");
 
 const utils = require("../utils/utils");
 
-// 文件上传到服务器的路径,存储在本地的
-// const dirPath = path.join(uploadUrl + "/video/" + utils.getNowFormatDate());
+const R = require("../utils/R")
 
-const dirPath = path.join(__dirname, "..", "public/uploadUrl/video");
-const upload = multer({ dest: dirPath });
+// 引入常量
+const Constants = require("../utils/Constants")
 
-// 创建图片保存的路径,绝对路径
-// 配置规则 配置目录/类型/原名称.类型
+// 创建对象存储实例
+const cos = new COS({
+  SecretId: Constants.txCosConfig.SecretId,
+  SecretKey: Constants.txCosConfig.SecretKey,
+})
 
-/**
- * @api {post} /video/upload 上传视频到服务器
- * @apiDescription 上传视频到服务器
- * @apiName 上传视频到服务器
- * @apiGroup Video
- * @apiBody {File} video 视频
- * @apiBody {String} water_level 水位
- * @apiBody {String} wave_direction 波浪方向
- * @apiBody {String} embank_ment 堤坝布置位置
- * @apiSuccess {json} result
- * @apiSuccessExample {json} Success-Response:
- *  {
- *      "status" : "200",
- *      "msg": "视频上传服务器成功.",
- *      "data": video
- *  }
- * @apiSampleRequest http://localhost:5050/video/upload
- * @apiVersion 1.0.0
- */
-router.post("/upload", upload.single("video"), async (req, res) => {
-  console.log("file upload :>> ");
-  const { name, total, index, size, hash } = req.body;
-  // 判断是否有文件
-  // 创建临时的文件块
-  const chunksPath = path.join(dirPath, hash, "/");
-  if (!fs.existsSync(chunksPath)) {
-    await utils.mkdirsSync(chunksPath);
-  }
-  // 文件重命名
-  await fs.renameSync(req.file.path, chunksPath + hash + "-" + index);
-  res.send({
-    status: 200,
-    msg: "分片文件上传成功",
-  });
+// 存储路径
+const dirPath = path.join("./");
+const upload = multer({
+  dest: dirPath
 });
 
-// 分片合并
-router.post("/upload/merge_chunks", async (req, res) => {
+// 创建cos上传存储的位置
+const uploadUrl = "node-serve/video/"
+
+/**
+ * 上传港口地图
+ */
+router.post("/upload", upload.single("video"), async (req, res) => {
+  /**
+   * filename：是文件名的hash，"8e7c4c36a823cd4bd9508167cfc679a6"
+   * mimetype 文件类型：'image/png'
+   * originalname：原来的名字
+   */
   const {
-    size,
-    name,
-    total,
-    hash,
-    type,
+    filename,
+    mimetype,
+    originalname
+  } = req.file
+
+  const {
     water_level,
     wave_direction,
     embank_ment,
-  } = req.body;
-  // 根据hash值，获取分片文件。
-  // 创建存储文件
-  // 合并
-  const chunksPath = path.join(dirPath, hash, "/");
-  const filePath = path.join(dirPath, name);
-  // 读取所有的chunks,文件名存储在数组中,
-  const chunks = fs.readdirSync(chunksPath);
-  console.log("chunks", chunks);
-  // 创建文件存储
-  fs.writeFileSync(filePath, "");
-  if (chunks.length !== total || chunks.length === 0) {
-    res.send.end({
-      status: 400,
-      msg: "切片文件数量不符合",
-    });
-    return;
-  }
-  for (let i = 0; i < total; i++) {
-    // 追加写入文件
-    fs.appendFileSync(filePath, fs.readFileSync(chunksPath + hash + "-" + i));
-    // 删除本次使用的chunks
-    fs.unlinkSync(chunksPath + hash + "-" + i);
-  }
-  // 同步目录
-  fs.rmdirSync(chunksPath);
-  // 保存数据到数据库
-  VideoModel.create({
-    url: name,
-    path: filePath,
-    type: type,
-    name: name,
-    water_level: water_level,
-    wave_direction: wave_direction,
-    embank_ment: embank_ment,
-  }).then((video) => {
-    if (video) {
-      res.send({
-        status: 200,
-        msg: "视频上传服务器成功.",
-        data: video,
-      });
+  } =
+  req.body;
+
+  // 视频重命名
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("视频重命名失败."))
     } else {
-      res.send({
-        status: 400,
-        msg: "视视频上传失败.",
-      });
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 6,
+        AsyncLimit: 10 // 分块并发量
+      }
+      let result = {}
+      // 上传任务的回调
+      let taskStatus = ""
+      // 上传进度的对象
+      let onHashProgress = {}
+      let onProgress = {}
+      cos.sliceUploadFile({
+        ...params,
+        // 上传任务创建时的回调函数，返回一个 taskId，
+        // 唯一标识上传任务，可用于上传任务的取消（cancelTask），停止（pauseTask）和重新开始（restartTask）
+        onTaskReady: (taskId) => {
+          taskStatus = taskId
+        },
+        // 计算文件 MD5 值的进度回调函数，回调参数为进度对象 progressData
+        onHashProgress: (progressData) => {
+          onHashProgress = progressData
+        },
+        // 上传文件的进度回调函数，回调参数为进度对象 progressData
+        onProgress: (progressData) => {
+          onProgress = progressData
+        }
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("视频上传服务器失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            // 保存图片信息到相关表格中
+            result = {
+              taskStatus,
+              onHashProgress: onHashProgress,
+              onProgress: onProgress
+            }
+            const {
+              dataValues
+            } = await VideoModel.create({
+              url: `http://${data.Location}`,
+              path: data.Key,
+              type: mimetype,
+              name: originalname,
+              water_level: water_level,
+              wave_direction: wave_direction,
+              embank_ment: embank_ment,
+            })
+            if (dataValues !== null) {
+              return res.send(R.success({
+                result,
+                ...data
+              }, "视频上传服务器成功."))
+            } else {
+              return res.send(R.fail("视频上传服务器失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("视频上传服务器失败."))
+        }
+      })
     }
   });
 });
@@ -137,44 +158,33 @@ router.post("/upload/merge_chunks", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/serach
  * @apiVersion 1.0.0
  */
-router.post("/serach", (req, res) => {
-  const { water_level, wave_direction, embank_ment } = req.body;
-  VideoModel.findOne({
+router.post("/serach", async (req, res) => {
+  const {
+    water_level,
+    wave_direction,
+    embank_ment,
+    pageNum,
+    pageSize
+  } = req.body;
+  const video = await VideoModel.findAll({
     where: {
-      [Op.and]: [
-        {
-          water_level: water_level,
+      [Op.or]: [{
+          water_level: water_level ? water_level : "",
         },
         {
-          wave_direction: wave_direction,
+          wave_direction: wave_direction ? wave_direction : "",
         },
         {
-          embank_ment: embank_ment,
+          embank_ment: embank_ment ? wave_direction : "",
         },
       ],
     },
   })
-    .then((video) => {
-      if (video) {
-        res.send({
-          status: 200,
-          msg: "查询视频成功.",
-          data: video,
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "查询视频失败，请重试！",
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("查询视频失败", error);
-      res.send({
-        status: 400,
-        msg: "查询视频失败，请重试！",
-      });
-    });
+  if (video.length > 0) {
+    return res.send(R.success(utils.pageFilter(video, pageNum, pageSize), "查询视频成功."))
+  } else {
+    return res.send(R.fail("查询视频失败."))
+  }
 });
 
 /**
@@ -193,40 +203,44 @@ router.post("/serach", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.get("/delete", async (req, res) => {
-  const { id } = req.query;
-  // 获取路径
-  const data = await VideoModel.findOne({
-    where: {
-      id,
-    },
-  });
-  // 删除存储在磁盘的视频
-  fs.unlinkSync(data.path);
-  VideoModel.destroy({
-    where: {
-      id,
-    },
-  })
-    .then((video) => {
+  const {
+    id,
+    name
+  } = req.query;
+  if (!id) {
+    return res.send(R.fail("id不可以为空."))
+  }
+  if (!name) {
+    return res.send(R.fail("视频不可以为空."))
+  }
+  // 删除文件的路径
+  const key = uploadUrl + name
+  // 腾讯云上传文件
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // 上传文件执行的目录，作为key存在
+    Key: key,
+  }
+  cos.deleteObject({
+    ...params
+  }, async (err, data) => {
+    if (err) {
+      return res.send(R.fail("港口视频删除失败."))
+    } else {
+      const video = await VideoModel.destroy({
+        where: {
+          id,
+        }
+      })
       if (video) {
-        res.send({
-          status: 200,
-          msg: "删除视频成功.",
-        });
+        return res.send(R.success(data, "港口视频删除成功."))
       } else {
-        res.send({
-          status: 400,
-          msg: "删除视频失败,请重试！",
-        });
+        return res.send(R.fail("港口视频删除失败."))
       }
-    })
-    .catch((error) => {
-      console.error("删除视频失败.", error);
-      res.send({
-        status: 400,
-        msg: "删除视频失败,请重试！",
-      });
-    });
+    }
+  })
+
 });
 
 /**
@@ -245,28 +259,25 @@ router.get("/delete", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/search/one
  * @apiVersion 1.0.0
  */
-router.get("/search/one", (req, res) => {
+router.get("/search/one", async (req, res) => {
   // 通过视频名称查看
-  const { name } = req.query;
-  VideoModel.findOne({
+  const {
+    name
+  } = req.query;
+  const {
+    dataValues
+  } = await VideoModel.findOne({
     where: {
       name: name,
     },
   })
-    .then((video) => {
-      res.send({
-        status: 200,
-        msg: "查询港区漫游视频成功.",
-        data: video,
-      });
-    })
-    .catch((error) => {
-      console.error("查询港区漫游视频失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询港区漫游视频失败.",
-      });
-    });
+  if (dataValues !== null) {
+    return res.send(R.success({
+      ...dataValues
+    }, "查询港区漫游视频成功."))
+  } else {
+    return res.send(R.fail("查询港区漫游视频失败."))
+  }
 });
 
 /**
@@ -286,30 +297,26 @@ router.get("/search/one", (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/findAll
  * @apiVersion 1.0.0
  */
-router.post("/findAll", (req, res) => {
-  const { pageNum, pageSize } = req.body;
-  VideoModel.findAll({ order: [["create_time"]] })
-    .then((video) => {
-      if (video) {
-        res.send({
-          status: 200,
-          msg: "获取港区漫游视频成功.",
-          data: utils.pageFilter(video, pageNum, pageSize),
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "获取港区漫游视频失败.",
-        });
-      }
+router.post("/findAll", async (req, res) => {
+  try {
+    const {
+      pageNum,
+      pageSize
+    } = req.body;
+    const video = await VideoModel.findAll({
+      order: [
+        ["create_time"]
+      ]
     })
-    .catch((error) => {
-      console.error("获取港区漫游视频失败.", error);
-      res.send({
-        status: 400,
-        msg: "获取港区漫游视频失败.",
-      });
-    });
+    if (video.length > 0) {
+      return res.send(R.success(utils.pageFilter(video, pageNum, pageSize), "获取港区漫游视频成功."))
+    } else {
+      return res.send(R.fail("获取港区漫游视频失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("没有视频."))
+  }
+
 });
 
 /**
@@ -332,59 +339,77 @@ router.post("/findAll", (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/update", upload.single("video"), async (req, res) => {
-  const { water_level, wave_direction, embank_ment, id } = req.body;
-  const file = req.file;
-  console.log(`file`, file);
-  if (file === null) {
-    res.send({
-      status: 400,
-      msg: "视频不能为空.",
-    });
-  }
-  // 获取路径
-  const data = await VideoModel.findOne({
-    where: {
-      id,
-    },
-  });
-  // 删除存储在磁盘的图片
-  fs.unlinkSync(data.path);
-  VideoModel.update(
-    {
-      url: file.originalname,
-      path: file.path,
-      type: file.mimetype,
-      name: file.originalname,
-      water_level: water_level,
-      wave_direction: wave_direction,
-      embank_ment: embank_ment,
-    },
-    {
-      where: {
-        id,
-      },
-    }
-  )
-    .then((video) => {
-      if (video) {
-        res.send({
-          status: 200,
-          msg: "视频信息修改成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "视视信息修改失败.",
-        });
+  const {
+    water_level,
+    wave_direction,
+    embank_ment,
+    id
+  } = req.body;
+  /**
+   * filename：是文件名的hash，"8e7c4c36a823cd4bd9508167cfc679a6"
+   * mimetype 文件类型：'image/png'
+   * originalname：原来的名字
+   */
+  const {
+    filename,
+    mimetype,
+    originalname
+  } = req.file
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("图片重命名失败."))
+    } else {
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 6,
       }
-    })
-    .catch((error) => {
-      console.error("视频信息修改失败.", error);
-      res.send({
-        status: 400,
-        msg: "视视信息修改失败.",
-      });
-    });
+      cos.sliceUploadFile({
+        ...params
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("视频修改上传失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            // 保存图片信息到相关表格中
+            const [portpointmap] = await VideoModel.update({
+              url: `http://${data.Location}`,
+              path: data.Key,
+              type: mimetype,
+              name: originalname,
+              water_level: water_level,
+              wave_direction: wave_direction,
+              embank_ment: embank_ment,
+            }, {
+              where: {
+                id,
+              },
+            })
+            if (portpointmap) {
+              return res.send(R.success({
+                ...data
+              }, "视频相关信息修改成功."))
+            } else {
+              return res.send(R.fail("视信息修改失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("视信息修改失败."))
+        }
+      })
+    }
+  });
 });
 
 /**
@@ -403,52 +428,72 @@ router.post("/update", upload.single("video"), async (req, res) => {
  * @apiVersion 1.0.0
  */
 router.post("/batch/delete", async (req, res) => {
-  const { videoIds } = req.body;
-  if (!videoIds) {
-    return res.send({
-      status: 400,
-      msg: "videoIds不可以为空",
-    });
+  const {
+    videoIds,
+    paths
+  } = req.body;
+  if (videoIds.length <= 0) {
+    return res.send(R.fail("videoIds不可以为空."))
   }
-  // 获取路径
-  const data = await VideoModel.findAll({
-    where: {
-      id: {
-        [Op.in]: videoIds,
-      },
-    },
-  });
-  // 删除存储在磁盘的图片
-  data.forEach((item) => {
-    fs.unlinkSync(item.path);
-  });
-  await VideoModel.destroy({
-    where: {
-      id: {
-        [Op.in]: videoIds,
-      },
-    },
-  })
-    .then((video) => {
-      if (video) {
-        res.send({
-          status: 200,
-          msg: "视频批量删除成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "视频批量删除失败.",
-        });
+  if (paths.length <= 0) {
+    return res.send(R.fail("paths不可以为空."))
+  }
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // Prefix表示列出的object的key以prefix开始，非必须
+    Prefix: uploadUrl,
+  }
+  cos.getBucket({
+    ...params
+  }, (err, data) => {
+    if (err) {
+      return res.send(R.fail("获取图片列表失败."))
+    } else {
+      // 需要删除的对象
+      const objects = data.Contents.map((item) => {
+        // 这里判断输入的paths的值和item.Key是否相等
+        const result = paths.map((value) => {
+          if (item.Key === value) {
+            return {
+              Key: value
+            }
+          }
+        })
+        return result
+      })
+      console.log('objects', objects)
+      console.log('data', data)
+      console.log('paths', paths)
+      const paramsData = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 要删除的对象列表
+        Objects: objects,
       }
-    })
-    .catch((err) => {
-      console.error("视频批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "视频批量删除失败.",
-      });
-    });
+      cos.deleteMultipleObject({
+        ...paramsData
+      }, async (delError, delData) => {
+        if (delError) {
+          return res.send(R.fail("港口视频批量删除失败."))
+        } else {
+          // 删除数据库数据
+          const video = await VideoModel.destroy({
+            where: {
+              id: {
+                [Op.in]: videoIds,
+              },
+            },
+          })
+          if (video) {
+            return res.send(R.success(delData, "港口视频批量删除成功."))
+          } else {
+            return res.send(R.fail("港口视频批量删除失败."))
+          }
+        }
+      })
+    }
+  })
 });
 
 /**
@@ -471,12 +516,14 @@ router.get("/search", (req, res) => {
   // 查询图片
   // 首先查询存储的位置，
   // 通过文件流的形式将图片读写
-  const { id } = req.query;
+  const {
+    id
+  } = req.query;
   VideoModel.findOne({
-    where: {
-      id,
-    },
-  })
+      where: {
+        id,
+      },
+    })
     .then((video) => {
       if (video) {
         // 设置响应头，告诉浏览器这是视频
