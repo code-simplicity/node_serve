@@ -202,7 +202,7 @@ router.post("/findAll", async (req, res) => {
   } = req.body;
   const point = await PointModel.findAll({
     order: [
-      ["create_time", "DESC"]
+      ["create_time"]
     ],
   })
   if (point.length > 0) {
