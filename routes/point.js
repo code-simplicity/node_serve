@@ -164,8 +164,9 @@ router.post("/search", async (req, res) => {
           },
         ],
       },
+      // 按照点位值的内容进行升序.
       order: [
-        ["create_time"]
+        ["content"]
       ],
     })
     if (point.length > 0) {
