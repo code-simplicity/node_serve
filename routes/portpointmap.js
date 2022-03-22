@@ -161,6 +161,52 @@ router.post("/search", async (req, res) => {
 });
 
 /**
+ * @apiSampleRequest http://localhost:5050/portpointmap/search/findOne
+ * @apiVersion 1.0.0
+ */
+router.post("/search/findOne", async (req, res) => {
+  try {
+    const {
+      water_level,
+      wave_direction,
+      embank_ment,
+    } = req.body;
+    if (!water_level) {
+      return res.send(R.fail("water_level不能为空."))
+    }
+    if (!wave_direction) {
+      return res.send(R.fail("wave_direction不能为空."))
+    }
+    if (!embank_ment) {
+      return res.send(R.fail("embank_ment不能为空."))
+    }
+    const {
+      dataValues
+    } = await PortPointMapModel.findOne({
+      where: {
+        [Op.and]: [{
+            water_level: water_level,
+          },
+          {
+            wave_direction: wave_direction,
+          },
+          {
+            embank_ment: embank_ment,
+          },
+        ],
+      },
+    })
+    if (dataValues !== null) {
+      return res.send(R.success(dataValues, "获取港口点位地图成功."))
+    } else {
+      return res.send(R.fail("获取港口点位地图失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("获取港口点位地图失败."))
+  }
+});
+
+/**
  * @api {post} /portpointmap/findAll 查询所有图片列表
  * @apiDescription 查询所有图片列表
  * @apiName 查询所有图片列表
