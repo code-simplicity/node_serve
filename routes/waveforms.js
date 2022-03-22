@@ -36,7 +36,7 @@ const upload = multer({
 });
 
 // 创建cos上传存储的位置
-const uploadUrl = `node-serve/wave-forms/${utils.getNowFormatDate()}`
+const uploadUrl = "node-serve/wave-forms/"
 
 /**
  * @api {post} /waveforms/upload  上传波形图
@@ -62,9 +62,6 @@ router.post("/upload", upload.single("image"), async (req, res) => {
   if (!point_id) {
     return res.send(R.fail("请选择对应的点位id."))
   }
-  // 判断是否有文件
-  const file = req.file;
-  console.log(`file`, file);
   const {
     filename,
     mimetype,
@@ -140,34 +137,42 @@ router.post("/upload", upload.single("image"), async (req, res) => {
  */
 router.get("/delete", async (req, res) => {
   const {
-    id
+    id,
+    name
   } = req.query;
-  // 获取路径
-  const data = await WaveFormsModel.findOne({
-    where: {
-      id,
-    },
-  });
-  // 删除存储在磁盘的图片
-  fs.unlinkSync(data.path);
-  WaveFormsModel.destroy({
-      where: {
-        id: id,
-      },
-    })
-    .then((result) => {
-      res.send({
-        status: 200,
-        msg: "删除波形图成功.",
-      });
-    })
-    .catch((error) => {
-      console.error("删除波形图失败.", error);
-      res.send({
-        status: 400,
-        msg: "删除波形图失败.",
-      });
-    });
+  if (!id) {
+    return res.send(R.fail("id不可以为空."))
+  }
+  if (!name) {
+    return res.send(R.fail("波形图名称不可以为空."))
+  }
+  // 删除文件的路径
+  const key = uploadUrl + name
+  // 腾讯云上传文件
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // 上传文件执行的目录，作为key存在
+    Key: key,
+  }
+  cos.deleteObject({
+    ...params
+  }, async (err, data) => {
+    if (err) {
+      return res.send(R.fail("波形图删除失败."))
+    } else {
+      const waveforms = await WaveFormsModel.destroy({
+        where: {
+          id,
+        }
+      })
+      if (waveforms) {
+        return res.send(R.success(data, "波形图删除成功."))
+      } else {
+        return res.send(R.fail("波形图删除失败."))
+      }
+    }
+  })
 });
 
 /**
@@ -194,55 +199,71 @@ router.post("/update", upload.single("image"), async (req, res) => {
     point_id,
     id
   } = req.body;
-  const file = req.file;
+  const {
+    filename,
+    mimetype,
+    originalname
+  } = req.file
   if (!point_id) {
-    return res.send({
-      status: 400,
-      msg: "请选择对应的点位id.",
-    });
+    return res.send(R.fail("请选择对应的点位id."))
   }
-  // 判断是否有文件
-  if (file === null) {
-    return res.send({
-      status: 400,
-      msg: "图片不可以为空.",
-    });
+  if (!id) {
+    return res.send(R.fail("波形图id不可以为空."))
   }
-  // 获取路径
-  const data = await WaveFormsModel.findOne({
-    where: {
-      id,
-    },
-  });
-  // 删除存储在磁盘的图片
-  fs.unlinkSync(data.path);
-  fs.unlinkSync(data.path);
-  await WaveFormsModel.update({
-      point_id: point_id,
-      url: file.originalname,
-      path: file.path,
-      type: file.mimetype,
-      name: file.originalname,
-    }, {
-      where: {
-        id: id,
-      },
-    })
-    .then((result) => {
-      if (result) {
-        res.send({
-          status: 200,
-          msg: "修改波形图成功.",
-        });
+  // 图片重命名
+  await fs.rename(filename, originalname, (error) => {
+    if (error) {
+      return res.send(R.fail("波形图重命名失败."))
+    } else {
+      // 上传文件的路径
+      const localFile = dirPath + originalname
+      const key = uploadUrl + originalname
+      // 腾讯云上传文件
+      const params = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 上传文件执行的目录，作为key存在
+        Key: key,
+        // 上传文件路径
+        FilePath: localFile,
+        // 表示文件大小超出一个数值时使用分块上传
+        SliceSize: 1024 * 1024 * 3,
       }
-    })
-    .catch((error) => {
-      console.error("修改波形图失败.", error);
-      res.send({
-        status: 400,
-        msg: "修改波形图失败.",
-      });
-    });
+      cos.sliceUploadFile({
+        ...params
+      }, async (err, data) => {
+        try {
+          if (err) {
+            return res.send(R.fail("港口点位地图上传失败."))
+          } else {
+            // 首先删除上传到本地的文件
+            fs.unlinkSync(localFile)
+            // 保存图片信息到相关表格中
+            const [portpointmap] = await WaveFormsModel.update({
+              point_id: point_id,
+              url: `http://${data.Location}`,
+              path: data.Key,
+              type: mimetype,
+              name: originalname
+            }, {
+              where: {
+                id,
+              },
+            })
+            if (portpointmap) {
+              return res.send(R.success({
+                ...data
+              }, "修改波形图成功."))
+            } else {
+              return res.send(R.fail("修改波形图失败."))
+            }
+          }
+        } catch (error) {
+          return res.send(R.fail("修改波形图失败."))
+        }
+      })
+    }
+  });
 });
 
 /**
@@ -261,29 +282,28 @@ router.post("/update", upload.single("image"), async (req, res) => {
  * @apiSampleRequest http://localhost:5050/waveforms/search/point_id
  * @apiVersion 1.0.0
  */
-router.get("/search/point_id", (req, res) => {
-  const {
-    point_id
-  } = req.query;
-  WaveFormsModel.findOne({
+router.get("/search/point_id", async (req, res) => {
+  try {
+    const {
+      point_id
+    } = req.query;
+    const {
+      dataValues
+    } = await WaveFormsModel.findOne({
       where: {
         point_id: point_id,
       },
     })
-    .then((result) => {
-      res.send({
-        status: 200,
-        msg: "查询波形图成功.",
-        data: result,
-      });
-    })
-    .catch((error) => {
-      console.error("查询波形图失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询波形图失败.",
-      });
-    });
+    if (dataValues !== null) {
+      return res.send(R.success({
+        ...dataValues
+      }, "查询波形图成功."))
+    } else {
+      return res.send(R.fail("查询波形图失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询波形图失败."))
+  }
 });
 
 /**
@@ -308,25 +328,16 @@ router.post("/findAll", async (req, res) => {
     pageNum,
     pageSize
   } = req.body;
-  await WaveFormsModel.findAll({
-      order: [
-        ["create_time", "DESC"]
-      ],
-    })
-    .then((result) => {
-      res.send({
-        status: 200,
-        msg: "获取波形图成功.",
-        data: utils.pageFilter(result, pageNum, pageSize),
-      });
-    })
-    .catch((error) => {
-      console.error("获取波形图失败.", error);
-      res.send({
-        status: 400,
-        msg: "获取波形图失败.",
-      });
-    });
+  const waveforms = await WaveFormsModel.findAll({
+    order: [
+      ["create_time"]
+    ],
+  })
+  if (waveforms.length > 0) {
+    return res.send(R.success(utils.pageFilter(waveforms, pageNum, pageSize), "获取波形图成功."))
+  } else {
+    return res.send(R.fail("获取波形图失败."))
+  }
 });
 
 /**
@@ -346,53 +357,68 @@ router.post("/findAll", async (req, res) => {
  */
 router.post("/batch/delete", async (req, res) => {
   const {
-    waveformsIds
+    waveformsIds,
+    paths
   } = req.body;
   if (!waveformsIds) {
-    return res.send({
-      status: 400,
-      msg: "waveformsIds不可以为空",
-    });
+    return res.send(R.fail("waveformsIds不可以为空."))
   }
-  // 获取路径
-  const data = await WaveFormsModel.findAll({
-    where: {
-      id: {
-        [Op.in]: waveformsIds,
-      },
-    },
-  });
-  // 批量删除存储在磁盘的图片
-  data.forEach((item) => {
-    fs.unlinkSync(item.path);
-  });
-  await WaveFormsModel.destroy({
-      where: {
-        id: {
-          [Op.in]: waveformsIds,
-        },
-      },
-    })
-    .then((result) => {
-      if (result) {
-        res.send({
-          status: 200,
-          msg: "波形图批量删除成功.",
-        });
-      } else {
-        res.send({
-          status: 400,
-          msg: "波形图批量删除失败.",
-        });
+  if (!paths) {
+    return res.send(R.fail("paths不可以为空."))
+  }
+  const params = {
+    Bucket: Constants.txCosConfig.Bucket,
+    Region: Constants.txCosConfig.Region,
+    // Prefix表示列出的object的key以prefix开始，非必须
+    Prefix: uploadUrl,
+  }
+  cos.getBucket({
+    ...params
+  }, (err, data) => {
+    if (err) {
+      return res.send(R.fail("获取图片列表失败."))
+    } else {
+      // 需要删除的对象
+      const objects = data.Contents.map((item) => {
+        // 这里判断输入的paths的值和item.Key是否相等
+        const result = paths.map((value) => {
+          if (item.Key === value) {
+            return {
+              Key: value
+            }
+          }
+        })
+        return result
+      })
+      const paramsData = {
+        Bucket: Constants.txCosConfig.Bucket,
+        Region: Constants.txCosConfig.Region,
+        // 要删除的对象列表
+        Objects: objects,
       }
-    })
-    .catch((err) => {
-      console.error("波形图批量删除失败.", err);
-      res.send({
-        status: 400,
-        msg: "波形图批量删除失败.",
-      });
-    });
+      cos.deleteMultipleObject({
+        ...paramsData
+      }, async (delError, delData) => {
+        if (delError) {
+          return res.send(R.fail("波形图批量删除失败."))
+        } else {
+          // 删除数据库数据
+          const waveforms = await WaveFormsModel.destroy({
+            where: {
+              id: {
+                [Op.in]: waveformsIds,
+              },
+            },
+          })
+          if (waveforms) {
+            return res.send(R.success(delData, "波形图批量删除成功."))
+          } else {
+            return res.send(R.fail("波形图批量删除失败."))
+          }
+        }
+      })
+    }
+  })
 });
 
 /**
@@ -411,49 +437,64 @@ router.post("/batch/delete", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/waveforms/search
  * @apiVersion 1.0.0
  */
-router.get("/search", (req, res) => {
-  // 查询图片
-  // 首先查询存储的位置，
-  // 通过文件流的形式将图片读写
-  const {
-    id
-  } = req.query;
-  WaveFormsModel.findOne({
+router.get("/search", async (req, res) => {
+  try {
+    // 使用对象存储返回url地址
+    const {
+      id
+    } = req.query;
+    if (!id) {
+      return res.send(R.fail("id不可以为空."))
+    }
+    const {
+      dataValues
+    } = await WaveFormsModel.findOne({
       where: {
         id,
       },
     })
-    .then((img) => {
-      if (img) {
-        // 设置响应头，告诉浏览器这是图片
-        res.writeHead(200, {
-          "Content-Type": "image/png"
-        });
-        // 创建一个读取图片流
-        const stream = fs.createReadStream(img.path);
-        // 声明一个存储数组
-        const resData = [];
-        if (stream) {
-          stream.on("data", (chunk) => {
-            resData.push(chunk);
-          });
-          stream.on("end", () => {
-            // 把流存储到缓存池
-            const finalData = Buffer.concat(resData);
-            // 响应，写数据
-            res.write(finalData);
-            res.end();
-          });
+    if (dataValues !== null) {
+      return res.send(R.success({
+        ...dataValues
+      }, "查询波形图成功."))
+    } else {
+      return res.send(R.fail("查询波形图失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询波形图失败."))
+  }
+});
+
+/**
+ * 获取点位图下的对应点位表的所有波形图
+ *  http://localhost:5050/waveforms/pointIds/findAll
+ * 
+ */
+router.post("/pointIds/findAll", async (req, res) => {
+  try {
+    const {
+      pointIds,
+      pageNum,
+      pageSize
+    } = req.body
+    if (pointIds.length <= 0) {
+      return res.send(R.fail("pointIds不可以为空"))
+    }
+    const waveforms = await WaveFormsModel.findAll({
+      where: {
+        point_id: {
+          [Op.or]: pointIds
         }
       }
     })
-    .catch((error) => {
-      console.error("查询波形图失败.", error);
-      res.send({
-        status: 400,
-        msg: "查询波形图失败.",
-      });
-    });
-});
+    if (waveforms.length > 0) {
+      return res.send(R.success(utils.pageFilter(waveforms, pageNum, pageSize), "查询点位图下所有波形图成功."))
+    } else {
+      return res.send(R.fail("查询点位图下所有波形图失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("查询点位图下所有波形图失败."))
+  }
+})
 
 module.exports = router;
