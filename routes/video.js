@@ -155,10 +155,10 @@ router.post("/upload", upload.single("video"), async (req, res) => {
  *      "msg": "查询视频成功.",
  *      "data": video
  *  }
- * @apiSampleRequest http://localhost:5050/video/serach
+ * @apiSampleRequest http://localhost:5050/video/search
  * @apiVersion 1.0.0
  */
-router.post("/serach", async (req, res) => {
+router.post("/search", async (req, res) => {
   const {
     water_level,
     wave_direction,
@@ -169,13 +169,13 @@ router.post("/serach", async (req, res) => {
   const video = await VideoModel.findAll({
     where: {
       [Op.or]: [{
-          water_level: water_level ? water_level : "",
+          water_level: water_level,
         },
         {
-          wave_direction: wave_direction ? wave_direction : "",
+          wave_direction: wave_direction,
         },
         {
-          embank_ment: embank_ment ? wave_direction : "",
+          embank_ment: embank_ment,
         },
       ],
     },
@@ -205,7 +205,7 @@ router.post("/serach", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/video/serach/findOne
  * @apiVersion 1.0.0
  */
-router.post("/serach/findOne", async (req, res) => {
+router.post("/search/findOne", async (req, res) => {
   try {
     const {
       water_level,
