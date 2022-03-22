@@ -234,12 +234,12 @@ router.post("/update", upload.single("image"), async (req, res) => {
       }, async (err, data) => {
         try {
           if (err) {
-            return res.send(R.fail("港口点位地图上传失败."))
+            return res.send(R.fail("波形图上传失败."))
           } else {
             // 首先删除上传到本地的文件
             fs.unlinkSync(localFile)
             // 保存图片信息到相关表格中
-            const [portpointmap] = await WaveFormsModel.update({
+            const [waveforms] = await WaveFormsModel.update({
               point_id: point_id,
               url: `http://${data.Location}`,
               path: data.Key,
@@ -250,7 +250,7 @@ router.post("/update", upload.single("image"), async (req, res) => {
                 id,
               },
             })
-            if (portpointmap) {
+            if (waveforms) {
               return res.send(R.success({
                 ...data
               }, "修改波形图成功."))
