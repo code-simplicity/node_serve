@@ -188,6 +188,66 @@ router.post("/serach", async (req, res) => {
 });
 
 /**
+ * @api {post} /video/serach 获取观察视频
+ * @apiDescription 查询视频
+ * @apiName 查询视频
+ * @apiGroup Video
+ * @apiBody {String} water_level 水位
+ * @apiBody {String} wave_direction 波浪方向
+ * @apiBody {String} embank_ment 堤坝布置位置
+ * @apiSuccess {json} result
+ * @apiSuccessExample {json} Success-Response:
+ *  {
+ *      "status" : "200",
+ *      "msg": "查询视频成功.",
+ *      "data": video
+ *  }
+ * @apiSampleRequest http://localhost:5050/video/serach/findOne
+ * @apiVersion 1.0.0
+ */
+router.post("/serach/findOne", async (req, res) => {
+  try {
+    const {
+      water_level,
+      wave_direction,
+      embank_ment,
+    } = req.body;
+    if (!water_level) {
+      return res.send(R.fail("water_level不能为空."))
+    }
+    if (!wave_direction) {
+      return res.send(R.fail("wave_direction不能为空."))
+    }
+    if (!embank_ment) {
+      return res.send(R.fail("embank_ment不能为空."))
+    }
+    const {
+      dataValues
+    } = await VideoModel.findOne({
+      where: {
+        [Op.and]: [{
+            water_level: water_level,
+          },
+          {
+            wave_direction: wave_direction,
+          },
+          {
+            embank_ment: embank_ment,
+          },
+        ],
+      },
+    })
+    if (dataValues !== null) {
+      return res.send(R.success(dataValues, "获取观看视频成功."))
+    } else {
+      return res.send(R.fail("获取观看视频失败."))
+    }
+  } catch (error) {
+    return res.send(R.fail("获取观看视频失败."))
+  }
+});
+
+/**
  * @api {get} /video/delete 删除上传的视频
  * @apiDescription 删除上传的视频
  * @apiName 删除上传的视频
