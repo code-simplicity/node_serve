@@ -27,6 +27,16 @@ const UserModel = sequelizedb.define('tb_user', {
         type: DataTypes.STRING,
         comment: '密码'
     },
+    // 性别
+    sex: {
+        type: DataTypes.STRING(20),
+        comment: '性别'
+    },
+    // 邮箱
+    email: {
+        type: DataTypes.STRING(32),
+        comment: '邮箱'
+    },
     // 角色,默认为普通用户，user，admin为管理员
     roles: {
         type: DataTypes.STRING,
