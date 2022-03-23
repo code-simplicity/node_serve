@@ -37,6 +37,22 @@ const txCosConfig = {
   Region: "ap-beijing",
 }
 
+// 邮箱发送
+const partnerEmail = {
+  QQ: {
+    host: "smtp.qq.com",
+    port: 465,
+    user: "468264345@qq.com",
+    pass: "ldufdvxeackubidi"
+  },
+  163: {
+    host: "smtp.163.com",
+    port: 465,
+    user: "xxx",
+    pass: "xxx"
+  }
+}
+
 module.exports = {
   TYPE_JPG,
   TYPE_PNG,
@@ -45,5 +61,6 @@ module.exports = {
   TYPE_PNG_WITH_PREFIX,
   TYPE_GIF_WITH_PREFIX,
   baseResultCode,
-  txCosConfig
+  txCosConfig,
+  partnerEmail
 };
