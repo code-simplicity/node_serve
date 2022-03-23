@@ -43,13 +43,13 @@ const partnerEmail = {
     host: "smtp.qq.com",
     port: 465,
     user: "468264345@qq.com",
-    pass: "ldufdvxeackubidi"
+    pass: "hsurryvymnsdbjfg"
   },
-  163: {
+  WY: {
     host: "smtp.163.com",
     port: 465,
-    user: "xxx",
-    pass: "xxx"
+    user: "13132053657@163.com",
+    pass: "XYASCDJQVXGMJGCM"
   }
 }
 
