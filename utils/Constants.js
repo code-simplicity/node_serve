@@ -53,6 +53,21 @@ const partnerEmail = {
   }
 }
 
+// 用户公共字段
+class User {
+  // 邮箱ip
+  static EMAIL_IP = "email_ip_"
+  // 邮箱地址
+  static EMAIL_ADDRESS = "email_address_"
+  // 验证码
+  static EMAIL_CODE = "email_code_"
+  // token
+  static TOKEN_KEY = "token_key_"
+}
+
+// 时间
+
+
 module.exports = {
   TYPE_JPG,
   TYPE_PNG,
@@ -62,5 +77,6 @@ module.exports = {
   TYPE_GIF_WITH_PREFIX,
   baseResultCode,
   txCosConfig,
-  partnerEmail
+  partnerEmail,
+  User
 };
