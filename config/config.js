@@ -3,20 +3,20 @@
 // 生产环境
 const {
   configDev,
-  uploadDev
+  redisConfig
+
 } = require("./config-dev");
 
 // 上线环境
 const {
   configProd,
-  uploadProd
+  redisConfig
 } = require("./config-prod");
 
 const config = configDev;
-const uploadUrl = uploadDev;
 
 // 暴露
 module.exports = {
   config,
-  uploadUrl
+  redisConfig
 };
