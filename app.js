@@ -19,6 +19,8 @@ const wavestatsRouter = require("./routes/wavestats");
 const portpointmapRouter = require("./routes/portpointmap");
 const pointRouter = require("./routes/point");
 const portmapRouter = require("./routes/portmap");
+// 添加测试功能代码
+const testRouter = require("./routes/test/code");
 // 导入jwtUtils
 const jwtUtils = require("./utils/jwtUtils");
 
@@ -67,6 +69,7 @@ app.use("/wavestats", wavestatsRouter);
 app.use("/portpointmap", portpointmapRouter);
 app.use("/point", pointRouter);
 app.use("/portmap", portmapRouter);
+app.use("/test", testRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {
