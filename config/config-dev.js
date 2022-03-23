@@ -7,11 +7,16 @@ const configDev = {
   port: 3306, // 端口号，MySQL默认3306
 };
 
-// 配置图片上传的位置,生产环境
-const uploadDev = "/root/docker/Graduation-Project/uploadUrl";
+// redis配置
+const redisConfig = {
+  database: 0, // 使用0号数据库
+  host: "192.168.1.112", // 主机地址
+  port: 6379, // 端口
+  password: 123456 // 密码
+}
 
 // 暴露配置
 module.exports = {
   configDev,
-  uploadDev
+  redisConfig
 };
