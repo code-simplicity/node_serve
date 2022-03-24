@@ -66,7 +66,14 @@ class User {
 }
 
 // 时间
-
+class TimeSecound {
+  static ONE = 1 // 1s
+  static MIN = 60 * 1 // 1min
+  static FIVE_MIN = 5 * 60 // 5min
+  static HOUR = 1 * 60 * 60 // 1hour
+  static TWO_HOUR = 2 * 60 * 60 // 2hour
+  static DAY = 24 * 60 * 60 // 1day
+}
 
 module.exports = {
   TYPE_JPG,
@@ -78,5 +85,6 @@ module.exports = {
   baseResultCode,
   txCosConfig,
   partnerEmail,
-  User
+  User,
+  TimeSecound
 };
