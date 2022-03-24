@@ -19,6 +19,7 @@ const wavestatsRouter = require("./routes/wavestats");
 const portpointmapRouter = require("./routes/portpointmap");
 const pointRouter = require("./routes/point");
 const portmapRouter = require("./routes/portmap");
+const portalUserRouter = require("./routes/portal/user");
 const portalUserExRouter = require("./routes/portal/userEx");
 // 添加测试功能代码
 const testRouter = require("./routes/test/code");
@@ -72,6 +73,7 @@ app.use("/point", pointRouter);
 app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter);
+app.use("/portal", portalUserRouter);
 
 // catch 404 and forward to error handler
 // app.use(function (req, res, next) {
