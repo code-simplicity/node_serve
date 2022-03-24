@@ -58,8 +58,23 @@ const getString = (key) => {
     })
 }
 
+/**
+ * 删除redis中的key
+ * @param {*} key 
+ */
+const delString = (key) => {
+    redisClient.del(key, (err, res) => {
+        if (err) {
+            console.log(err)
+        } else {
+            console.log(`redis中的key${key}删除成功`, res)
+        }
+    })
+}
+
 module.exports = {
     redisClient,
     setString,
-    getString
+    getString,
+    delString
 }
