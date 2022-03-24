@@ -8,6 +8,9 @@ const TYPE_JPG_WITH_PREFIX = PREFIX + "jpg";
 const TYPE_PNG_WITH_PREFIX = PREFIX + "png";
 const TYPE_GIF_WITH_PREFIX = PREFIX + "gif";
 
+// 私有秘钥
+const PRIVITE_KEY = "school_token";
+
 // 状态码
 class baseResultCode {
   // 成功
@@ -64,6 +67,12 @@ class User {
   // token
   static TOKEN_KEY = "token_key_"
   static PASSWORD_MESSAGE = "password_message" // crypto-js的第一个参数
+  // cookie的名字
+  static USER_COOKIE_DATA = "app_cookie_data"
+  // 图灵验证码的连接key
+  static CAPTCHA_CONTENT = "captcha_content_"
+  // 最后出现的图灵验证码的key
+  static LAST_CAPTCHA_ID = "last_captcha_id_"
 }
 
 // 时间
@@ -71,9 +80,10 @@ class TimeSecound {
   static ONE = 1 // 1s
   static MIN = 60 * 1 // 1min
   static FIVE_MIN = 5 * 60 // 5min
+  static TEN_MIN = 10 * 60 // 10min
   static HOUR = 1 * 60 * 60 // 1hour
   static TWO_HOUR = 2 * 60 * 60 // 2hour
-  static DAY = 24 * 60 * 60 // 1day
+  static DAY = 24 * 60 * 60 * 60 // 1day
 }
 
 module.exports = {
@@ -87,5 +97,6 @@ module.exports = {
   txCosConfig,
   partnerEmail,
   User,
-  TimeSecound
+  TimeSecound,
+  PRIVITE_KEY
 };
