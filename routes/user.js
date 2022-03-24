@@ -16,6 +16,8 @@ const utils = require("../utils/utils");
 
 const R = require("../utils/R")
 
+const Constants = require("../utils/Constants")
+
 /* GET ho page. */
 router.get("/", function (req, res, next) {
   res.render("index", {
@@ -155,9 +157,9 @@ router.post("/user/login", async (req, res) => {
       }
       // 传递id，生成token
       const token = await jwtUtils.setToken(dataValues.id);
-      // 生成cookie，将token存在cookie中，并且交给浏览器保存
-      res.cookie("token", token, {
-        maxAge: 10 * 60 * 60 * 24,
+      // 生成cookie，将token存在cookie中，并且交给浏览器保存,cookie一天过期
+      res.cookie(Constants.User.USER_COOKIE_DATA, token, {
+        maxAge: Constants.TimeSecound.DAY,
       });
       // 响应数据中不要携带password，避免被攻击
       const {
