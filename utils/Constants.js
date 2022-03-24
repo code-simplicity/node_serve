@@ -63,6 +63,7 @@ class User {
   static EMAIL_CODE = "email_code_"
   // token
   static TOKEN_KEY = "token_key_"
+  static PASSWORD_MESSAGE = "password_message" // crypto-js的第一个参数
 }
 
 // 时间
