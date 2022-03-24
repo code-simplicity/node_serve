@@ -100,7 +100,6 @@ router.post("/userEx/sendMailCode", async (req, res) => {
      * 产生6位数字的随机验证码
      */
     const emailCode = Math.floor(Math.random() * (999999 - 100000 + 1) + 100000)
-    console.log("emailCode", emailCode)
     // 保存验证码到redis，5分钟过期
     redis.setString(Constants.User.EMAIL_CODE + emailAddress, emailCode, Constants.TimeSecound.FIVE_MIN)
     // 发送验证码
