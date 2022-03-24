@@ -9,10 +9,10 @@ const configDev = {
 
 // redis配置
 const redisConfig = {
-  database: 0, // 使用0号数据库
-  host: "192.168.1.112", // 主机地址
+  database: "0", // 使用0号数据库
+  url: "101.42.107.166", // 主机地址
   port: 6379, // 端口
-  password: 123456 // 密码
+  password: "123456" // 密码
 }
 
 // 暴露配置

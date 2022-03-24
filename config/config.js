@@ -9,14 +9,14 @@ const {
 
 // 上线环境
 const {
-  configProd,
-  redisConfig
+  configProd
 } = require("./config-prod");
 
 const config = configDev;
+const redisDB = redisConfig;
 
 // 暴露
 module.exports = {
   config,
-  redisConfig
+  redisDB
 };
