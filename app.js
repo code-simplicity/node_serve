@@ -8,6 +8,8 @@ const cors = require("cors");
 
 const expressJWT = require("express-jwt");
 
+const Constants = require("./utils/Constants")
+
 const userRouter = require("./routes/user");
 const excelRouter = require("./routes/excel");
 const imageRouter = require("./routes/image");
@@ -21,15 +23,13 @@ const pointRouter = require("./routes/point");
 const portmapRouter = require("./routes/portmap");
 const portalUserRouter = require("./routes/portal/user");
 const portalUserExRouter = require("./routes/portal/userEx");
+const captchaRouter = require("./routes/captcha");
 // 添加测试功能代码
 const testRouter = require("./routes/test/code");
 // 导入jwtUtils
 const jwtUtils = require("./utils/jwtUtils");
 
 const app = express();
-
-// 私有秘钥
-const PRIVITE_KEY = "bugdr_token";
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -60,7 +60,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", userRouter);
+app.use("/", userRouter, captchaRouter);
 app.use("/excel", excelRouter);
 app.use("/image", imageRouter);
 app.use("/video", videoRouter);
@@ -72,13 +72,8 @@ app.use("/portpointmap", portpointmapRouter);
 app.use("/point", pointRouter);
 app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
-app.use("/portal", portalUserExRouter);
-app.use("/portal", portalUserRouter);
-
-// catch 404 and forward to error handler
-// app.use(function (req, res, next) {
-//   next(createError(404));
-// });
+app.use("/portal", portalUserExRouter, portalUserRouter);
+// app.use("/portal", portalUserRouter);
 
 // 解析token，获取用户信息
 app.use(function (req, res, next) {
@@ -106,7 +101,7 @@ app.use(function (req, res, next) {
 app.use(
   expressJWT({
     // 设置令牌
-    secret: PRIVITE_KEY,
+    secret: Constants.PRIVITE_KEY,
     // 设置加密算法
     algorithms: ["HS256"],
     // 校验是否存在token，有token才可以访问
