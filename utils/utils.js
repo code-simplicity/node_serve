@@ -1,6 +1,8 @@
 const Constants = require("./Constants");
 const path = require("path");
 const fs = require("fs-extra");
+// 加密库
+const CryptoJS = require("crypto-js")
 // 创建文件夹
 const mkdirsSync = (dirname) => {
   if (fs.existsSync(dirname)) {
@@ -97,8 +99,68 @@ function formatZero(num, len) {
 
 // 判断字符串是否为空
 function isEmpty(text) {
-  return text === null ? true : false
+  return text === null || text === undefined ? true : false
 }
+
+/**
+ * 获取cookie的key
+ * @param {*} request req.cookies
+ * @param {*} key 
+ * @returns 
+ */
+function getCookieKey(request, key) {
+  const cookie = request
+  if (cookie === null) {
+    console.log("cookie is null")
+    return null
+  }
+  for (const cookieKey in cookie) {
+    if (key === cookieKey) {
+      return cookieKey
+    }
+  }
+  return null
+}
+
+/**
+ * 设置cookie
+ * @param {*} response 响应结果
+ * @param {*} key 关键字
+ * @param {*} value 具体值
+ * @param {*} age 时间
+ */
+function setCookieKey(response, key, value, age) {
+  response.cookie(key, value, {
+    maxAge: age
+  })
+}
+
+/**
+ * DES加密
+ * @param {*} message 
+ * @returns 
+ */
+function desEncrypt(message, desKey) {
+  const encrypted = CryptoJS.DES.encrypt(message, desKey)
+  return encrypted.toString()
+}
+
+/**
+ * des解密方法
+ * @param {*} ciphertext 
+ * @returns 
+ */
+function desDecrypt(ciphertext, desKey) {
+  if (ciphertext === "" || ciphertext === null || ciphertext === undefined) {
+    return ""
+  }
+  if (typeof (ciphertext) === "string") {
+    ciphertext = ciphertext.toString();
+  }
+  const decrypted = CryptoJS.DES.decrypt(ciphertext, desKey)
+  return decrypted.toString(CryptoJS.enc.Utf8)
+}
+
 module.exports = {
   dateFormat,
   getType,
@@ -108,4 +170,8 @@ module.exports = {
   isEmpty,
   // 异步创建文件夹
   mkdirsSync,
+  getCookieKey,
+  setCookieKey,
+  desEncrypt,
+  desDecrypt
 };
