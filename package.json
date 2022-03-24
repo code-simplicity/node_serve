@@ -37,7 +37,8 @@
     "qiniu": "^7.4.0",
     "redis": "^3.1.2",
     "sequelize": "^6.9.0",
-    "svg-captcha": "^1.4.0"
+    "svg-captcha": "^1.4.0",
+    "uuid": "^8.3.2"
   },
   "apidoc": {
     "name": "项目后端接口文档",
