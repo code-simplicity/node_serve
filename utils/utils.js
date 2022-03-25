@@ -110,16 +110,16 @@ function isEmpty(text) {
  */
 function getCookieKey(request, key) {
   const cookie = request
-  if (cookie === null) {
+  console.log("cookie ==>", cookie)
+  if (cookie === null || cookie === undefined) {
     console.log("cookie is null")
     return null
   }
   for (const cookieKey in cookie) {
     if (key === cookieKey) {
-      return cookieKey
+      return cookie[cookieKey]
     }
   }
-  return null
 }
 
 /**
@@ -132,6 +132,17 @@ function getCookieKey(request, key) {
 function setCookieKey(response, key, value, age) {
   response.cookie(key, value, {
     maxAge: age
+  })
+}
+
+/**
+ * 删除cookie
+ * @param {*} response 
+ * @param {*} key 
+ */
+function delCookieKey(response, key) {
+  response.cookie(key, "", {
+    maxAge: ""
   })
 }
 
@@ -172,6 +183,7 @@ module.exports = {
   mkdirsSync,
   getCookieKey,
   setCookieKey,
+  delCookieKey,
   desEncrypt,
   desDecrypt
 };

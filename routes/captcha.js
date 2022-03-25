@@ -36,9 +36,12 @@ router.get("/captcha", async (req, res) => {
     // 获取图灵验证码
     const captcha = svgCaptcha.create({
         size: 6,
-        noise: 2,
+        noise: 1,
         color: true,
-        background: '#BCBCBC'
+        background: '#BCBCBC',
+        height: 40,
+        width: 100,
+        fontSize: 38
     })
     // 发送类型为svg
     res.type("svg")
@@ -52,7 +55,7 @@ router.get("/captcha", async (req, res) => {
     utils.setCookieKey(res, Constants.User.LAST_CAPTCHA_ID, key, Constants.TimeSecound.DAY)
     redis.setString(Constants.User.CAPTCHA_CONTENT + key, captcha.text, Constants.TimeSecound.TEN_MIN)
     // 这个是发送给前端展示的
-    return res.send(R.success(captcha.data, "图灵验证码获取成功."))
+    return res.send(captcha.data)
 })
 
 module.exports = router;

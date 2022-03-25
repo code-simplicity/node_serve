@@ -145,10 +145,15 @@ router.post("/user/add", async (req, res) => {
 router.post("/user/login", async (req, res) => {
     // 登录可以使用学号+密码或者邮箱+密码
     const loginVo = req.body
-    // 机械验证码
-    const {
-        captcha
+    // 机械验证码和来自哪里
+    let {
+        captcha,
+        from
     } = req.body
+    // 判断用户从哪个平台进入的
+    if (utils.isEmpty(from) || Constants.App.FROM_PC !== from) {
+        from = Constants.App.FROM_PC
+    }
     // 从cookie中获取captcha的key
     const captchaKey = utils.getCookieKey(req.cookies, Constants.User.LAST_CAPTCHA_ID)
     // 通过key从redis中读取相关的机器验证码的值
@@ -192,10 +197,13 @@ router.post("/user/login", async (req, res) => {
         return res.send(R.fail("该用户不存在或者已经被拉黑."))
     }
     // 创建token，删除cookie
-    const tokenKey = await createToken(req.cookies, user.dataValues)
+    const tokenKey = await createToken(req.cookies, user.dataValues, from)
     // 将tokenKey写入cookie中，需要动态获取的话直接从request.cookies拿取
     // 设置cookie，
-    utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.DAY)
+    console.log("tokenKey ==== >", tokenKey)
+    utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.TEN_DAY)
+    // 删除验证码创建的LAST_CAPTCHA_ID的cookie
+    utils.delCookieKey(res, Constants.User.LAST_CAPTCHA_ID)
     return res.send(R.success({}, "登录成功."))
 })
 
@@ -232,7 +240,7 @@ router.get("/user/info", async (req, res) => {
 })
 
 /**
- * @api {post} /portal/user/update/info 更新用户信息
+ * @api {put} /portal/user/update/info 更新用户信息
  * @apiDescription 更新用户信息
  * @apiName 门户
  * @apiGroup PortalUser
@@ -244,7 +252,7 @@ router.get("/user/info", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portal/user/update/info
  * @apiVersion 1.0.0
  */
-router.post("/user/update/info", async (req, res) => {
+router.put("/user/update/info", async (req, res) => {
     // 这里更新的只有用户名和性别
     const user = req.body
     // 从token中解析user
@@ -290,6 +298,165 @@ router.post("/user/update/info", async (req, res) => {
 })
 
 /**
+ * @api {put} /portal/user/reset-password 重置密码
+ * @apiDescription 重置密码
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiBody  {String} id="1807010210" 学号
+ * @apiBody  {String} password="123456" 密码
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/reset-password
+ * @apiVersion 1.0.0
+ */
+router.put("/user/reset-password", async (req, res) => {
+    const {
+        id,
+        password
+    } = req.body
+    if (utils.isEmpty(id)) {
+        return res.send(R.fail("学号不可以为空."))
+    }
+    if (utils.isEmpty(password)) {
+        return res.send(R.fail("密码不可以为空."))
+    }
+    if (password.length !== 32) {
+        return res.send(R.fail("请使用md5进行加密."))
+    }
+    const user = await UserModel.findOne({
+        where: {
+            id
+        }
+    })
+    if (user === null) {
+        return res.send(R.fail("该用户不存在."))
+    }
+    // 对密码进行加密入库
+    const [update] = await UserModel.update({
+        password: utils.desEncrypt(password, Constants.User.PASSWORD_MESSAGE)
+    }, {
+        where: {
+            id
+        }
+    })
+    if (update) {
+        return res.send(R.success({}, "重置密码成功."))
+    }
+})
+
+/**
+ * @api {get} /portal/user/logout 退出登录
+ * @apiDescription 退出登录
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/logout
+ * @apiVersion 1.0.0
+ */
+router.get("/user/logout", async (req, res) => {
+    // 拿到token_key
+    const tokenKey = utils.getCookieKey(req.cookies, Constants.User.USER_COOKIE_DATA)
+    if (utils.isEmpty(tokenKey)) {
+        return res.send(R.fail("账户未登陆."))
+    }
+    // 删除redis中的token
+    redis.delString(Constants.User.TOKEN_KEY + tokenKey)
+    // 删除mysql中的refreshtoken
+    await RefreshTokenModel.update({
+        token_key: ""
+    }, {
+        where: {
+            token_key: tokenKey
+        }
+    })
+    // 删除cookie中的token_key
+    utils.delCookieKey(res, Constants.User.USER_COOKIE_DATA)
+    return res.send(R.success({}, "退出登录成功."))
+});
+
+/**
+ * @api {get} /portal/user/count 获取用户总数
+ * @apiDescription 获取用户总数
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiBody  {String} id="1807010210" 学号
+ * @apiBody  {String} password="123456" 密码
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/count
+ * @apiVersion 1.0.0
+ */
+router.get("/user/count", async (req, res) => {
+    const {
+        count
+    } = await UserModel.findAndCountAll()
+    return res.send(R.success(count, "获取用户总数成功."))
+})
+
+/**
+ * @api {post} /portal/user/add/score 查询当前用户，并且添加得分
+ * @apiDescription 查询当前用户，并且添加得分
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiBody  {String} id="1807010210" 学号
+ * @apiBody  {String} score="0" 得分
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/add/score
+ * @apiVersion 1.0.0
+ */
+router.post("/user/add/score", async (req, res) => {
+    const {
+        id,
+        score
+    } = req.body;
+    if (score > 100 || score < 0) {
+        return res.send(R.fail(`当前输入得分为${score}：得分不能低于0，不能超过100.`))
+    }
+    if (utils.isEmpty(id)) {
+        return res.send(R.fail("学号不可以为空."))
+    }
+    // 更新查询
+    const [update] = await UserModel.update({
+        score: score,
+    }, {
+        where: {
+            id: id,
+        },
+    })
+    const {
+        dataValues
+    } = await UserModel.findOne({
+        where: {
+            id: id
+        }
+    })
+    if (update || dataValues.score === score) {
+        return res.send(R.success({
+            score: score
+        }, `当前获得分数：${score}分.`))
+    } else {
+        return res.send(R.fail("添加得分失败，视频未看完或者有其他任务未完成！"))
+    }
+});
+
+/**
+ * @api {get} /portal/user/check-token 检查用户是否登录
+ * @apiDescription 检查用户是否登录
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiBody  {String} id="1807010210" 学号
+ * @apiBody  {String} score="0" 得分
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/check-token
+ * @apiVersion 1.0.0
+ */
+router.get("/user/check-token", async (req, res) => {
+    const user = await checkUser(req)
+    if (user === null) {
+        return res.send(R.fail("用户未登录."))
+    }
+    return res.send(R.success(user, "获取用户成功."))
+})
+
+/**
  * 检查用户是否登录，如果登录就返回用户信息
  * @param {*} request 请求
  */
@@ -325,7 +492,7 @@ async function checkUser(request) {
                 }
             })
             // 删除refresh_token的记录
-            const newTokenKey = createToken(request.cookie, userForm)
+            const newTokenKey = createToken(request.cookies, userForm)
             console.log("正在创建新的tokenkey")
             return parseByTokenKey(newTokenKey)
         } catch (error) {
@@ -341,8 +508,9 @@ async function checkUser(request) {
  * @param {*} request 请求
  * @param {*} response 响应
  * @param {*} user 用户信息
+ * @param {*} from 来自设备
  */
-async function createToken(request, user) {
+async function createToken(request, user, from) {
     const oldTokenKey = utils.getCookieKey(request, Constants.User.USER_COOKIE_DATA)
     console.log("oldTokenKey ==>", oldTokenKey)
     // 不能干掉
@@ -351,32 +519,39 @@ async function createToken(request, user) {
             user_id: user.id
         }
     })
-    console.log("oldRefreshToken ==>", oldRefreshToken)
-    if (oldRefreshToken !== null) {
-        redis.delString(Constants.User.TOKEN_KEY + oldRefreshToken.dataValues.token_key)
-    }
-    //删除对应的token_key，置空
-    await RefreshTokenModel.update({
-        token_key: ""
-    }, {
-        where: {
-            token_key: oldTokenKey
+    // 判断来源是否一致
+    if (Constants.App.FROM_PC === from) {
+        if (oldRefreshToken !== null) {
+            redis.delString(Constants.User.TOKEN_KEY + oldRefreshToken.dataValues.token_key)
         }
-    })
+        console.log("oldRefreshToken ==>", oldRefreshToken)
+        //删除对应的token_key，置空
+        await RefreshTokenModel.update({
+            token_key: ""
+        }, {
+            where: {
+                token_key: oldTokenKey == undefined ? "" : oldTokenKey
+            }
+        })
+    }
     // 生成token，根据用户id,保存时间为10天
     // 对对象进行解构，移除密码
     const {
         password,
         ...userForm
     } = user
-    const token = await jwtUtils.setToken(userForm)
+    const claims = {
+        ...userForm,
+        from: from
+    }
+    const token = await jwtUtils.setToken(claims)
     // 返回token的md5值，token保存在redis中
     // 前端访问的时候，携带token的md5，从redis中获取
-    const tokenKey = CryptoJS.MD5(token).toString()
+    const tokenKey = from + CryptoJS.MD5(token).toString()
     console.log("createToken token", token)
     console.log("createToken tokenKey", tokenKey)
-    // 保存在redis中,两小时过期
-    await redis.setString(Constants.User.TOKEN_KEY + tokenKey, token, Constants.TimeSecound.TWO_HOUR)
+    // 保存在redis中,一小时过期
+    redis.setString(Constants.User.TOKEN_KEY + tokenKey, token, Constants.TimeSecound.DAY)
     // 首先判断数据库中refreshToken存在吗，如果存在就更新，否者就建立
     const refreshToken = await RefreshTokenModel.findOne({
         where: {

@@ -75,6 +75,10 @@ class User {
   static LAST_CAPTCHA_ID = "last_captcha_id_"
 }
 
+class App {
+  static FROM_PC = "P_" // 来自哪里，默认来自pc端
+}
+
 // 时间
 class TimeSecound {
   static ONE = 1 // 1s
@@ -82,9 +86,9 @@ class TimeSecound {
   static FIVE_MIN = 5 * 60 // 5min
   static TEN_MIN = 10 * 60 // 10min
   static HOUR = 1 * 60 * 60 // 1hour
-  static TWO_HOUR = 2 * 60 * 60 // 2hour
-  static DAY = 24 * 60 * 60 // 1day
-  static TEN_DAY = 10 * 24 * 60 * 60 // 10day
+  static TWO_HOUR = 2 * 60 * 60 * 60 // 2hour
+  static DAY = 24 * 60 * 60 * 60 // 1day
+  static TEN_DAY = 10 * 24 * 60 * 60 * 60 // 10day
 }
 
 module.exports = {
@@ -99,5 +103,6 @@ module.exports = {
   partnerEmail,
   User,
   TimeSecound,
-  PRIVITE_KEY
+  PRIVITE_KEY,
+  App
 };
