@@ -19,15 +19,15 @@ module.exports = {
     // 验证token
     verToken(token) {
         return new Promise((resolve, reject) => {
-            const info = jwt.verify(token, jwtScrect, {
+            jwt.verify(token, jwtScrect, {
                 algorithms: ['HS256']
             }, (err, decoded) => {
                 if (err) {
                     reject(err)
+                } else {
+                    resolve(decoded)
                 }
-                console.log(decoded)
             })
-            resolve(info)
         })
     },
 
