@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 // 签名
-const jwtScrect = 'bugdr_token'
+const jwtScrect = 'school_token'
 
 module.exports = {
     // 生成token的方法
@@ -10,9 +10,8 @@ module.exports = {
             const token = jwt.sign({
                 id
             }, jwtScrect, {
-                expiresIn: 10 * 60 * 60 * 24
+                expiresIn: 10 * 24 * 60 * 60
             })
-            console.log('token', token);
             resolve(token);
         })
     },
@@ -24,8 +23,7 @@ module.exports = {
                 algorithms: ['HS256']
             }, (err, decoded) => {
                 if (err) {
-                    console.log(`err`, err.message)
-                    return
+                    reject(err)
                 }
                 console.log(decoded)
             })

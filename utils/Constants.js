@@ -83,7 +83,8 @@ class TimeSecound {
   static TEN_MIN = 10 * 60 // 10min
   static HOUR = 1 * 60 * 60 // 1hour
   static TWO_HOUR = 2 * 60 * 60 // 2hour
-  static DAY = 24 * 60 * 60 * 60 // 1day
+  static DAY = 24 * 60 * 60 // 1day
+  static TEN_DAY = 10 * 24 * 60 * 60 // 10day
 }
 
 module.exports = {

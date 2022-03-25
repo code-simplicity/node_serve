@@ -193,19 +193,21 @@ router.post("/user/login", async (req, res) => {
     }
     console.log("user", user)
     // 创建token，删除cookie
-    createToken(req.cookies, res, user.dataValues)
+    const tokenKey = createToken(req.cookies, user.dataValues)
+    // 将tokenKey写入cookie中，需要动态获取的话直接从request.cookies拿取
+    // 设置cookie，
+    utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.DAY)
     return res.send(R.success({}, "登录成功."))
 })
 
 /**
  * 创建token
  * @param {*} request 请求
- * @param {*} res 响应
+ * @param {*} response 响应
  * @param {*} user 用户信息
  */
-async function createToken(request, res, user) {
+async function createToken(request, user) {
     const oldTokenKey = utils.getCookieKey(request, Constants.User.USER_COOKIE_DATA)
-    console.log("oldTokenKey", oldTokenKey)
     // 不能干掉
     const oldRefreshToken = await RefreshTokenModel.findOne({
         where: {
@@ -225,35 +227,30 @@ async function createToken(request, res, user) {
             token_key: oldTokenKey
         }
     })
-    // 生成token，根据用户id
+    // 生成token，根据用户id,保存时间为10天
     const token = await jwtUtils.setToken(user.id)
+    console.log("token", token)
     // 返回token的md5值，token保存在redis中
     // 前端访问的时候，携带token的md5，从redis中获取
     const tokenKey = CryptoJS.MD5(token)
     // 保存在redis中,两小时过期
     redis.setString(Constants.User.TOKEN_KEY + tokenKey, token, Constants.TimeSecound.TWO_HOUR)
-    // 将tokenKey写入cookie中，需要动态获取的话直接从request.cookies拿取
-    // TODO:
-    // utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.DAY)
     // 首先判断数据库中refreshToken存在吗，如果存在就更新，否者就建立
     const refreshToken = await RefreshTokenModel.findOne({
         where: {
             user_id: user.id
         }
     })
-    if (refreshToken == null) {
-        await RefreshTokenModel.create({
-            user_id: user.id,
-            create_time: new Date()
-        })
-    }
     //不管是过期了还是重新登陆，都生成/更新refreshToken
     const refreshTokenValue = await jwtUtils.setToken(user.id)
     // 保存到数据库
-    await RefreshTokenModel.create({
-        refresh_token: refreshTokenValue,
-        create_time: new Date()
-    })
+    if (refreshToken == null) {
+        await RefreshTokenModel.create({
+            user_id: user.id,
+            refresh_token: refreshTokenValue,
+            create_time: new Date()
+        })
+    }
     return tokenKey
 }
 
