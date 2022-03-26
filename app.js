@@ -3,12 +3,14 @@ const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const app = express();
 
-const cors = require("cors");
+const {
+  jwtAuth
+} = require("./utils/jwtUtils")
 
-const expressJWT = require("express-jwt");
-
-const Constants = require("./utils/Constants")
+// 返回结果的封装
+const R = require("./utils/R")
 
 const userRouter = require("./routes/user");
 const excelRouter = require("./routes/excel");
@@ -26,10 +28,6 @@ const portalUserExRouter = require("./routes/portal/userEx");
 const captchaRouter = require("./routes/captcha");
 // 添加测试功能代码
 const testRouter = require("./routes/test/code");
-// 导入jwtUtils
-const jwtUtils = require("./utils/jwtUtils");
-
-const app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -60,6 +58,23 @@ app.use(
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+// 验证token是否过期，并且规定哪一些路由是不需要token的，
+// 校验token，获取headers⾥里里的Authorization的token，要写在路由加载之前，静态资源之后
+// app.use(jwtAuth);
+// app.use(
+//   expressJWT({
+//     // 设置令牌
+//     secret: Constants.User.USER_COOKIE_DATA,
+//     // 设置加密算法
+//     algorithms: ["HS256"],
+//     // 校验是否存在token，有token才可以访问
+//     credentialsRequired: true,
+//   }).unless({
+//     path: ["/portal/user/login", "/portal/user/add", "/portal/user/check-token", "/captcha", "/portal/user/logout", "/portal/user/info"],
+//   })
+// );
+
+// 加载路由
 app.use("/", userRouter, captchaRouter);
 app.use("/excel", excelRouter);
 app.use("/image", imageRouter);
@@ -73,63 +88,19 @@ app.use("/point", pointRouter);
 app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter);
-// app.use("/portal", portalUserRouter);
 
-// 解析token，获取用户信息
-app.use(function (req, res, next) {
-  const token = req.headers["authorization"];
-  console.log(`token  object`, token);
-  if (token === undefined) {
-    // 直接退出，避免多次请求
-    return;
-  } else {
-    jwtUtils
-      .verToken(token)
-      .then((data) => {
-        req.data = data;
-        return next();
-      })
-      .catch((err) => {
-        console.log(`err`, err);
-        // 直接退出，避免多次请求
-        return;
-      });
-  }
-});
-
-// 验证token是否过期，并且规定哪一些路由是不需要token的
-app.use(
-  expressJWT({
-    // 设置令牌
-    secret: Constants.PRIVITE_KEY,
-    // 设置加密算法
-    algorithms: ["HS256"],
-    // 校验是否存在token，有token才可以访问
-    credentialsRequired: true,
-  }).unless({
-    path: ["/user/login", "/user/add", "/user/logout", "/user/info"],
-  })
-);
-
-// error handler
-app.use(function (err, req, res, next) {
-  // 判断token是否存在
+// 错误处理
+app.use((err, req, res, next) => {
+  console.log('err', err)
   if (err.name === "UnauthorizedError") {
-    res.status(401).send({
-      status: 301,
-      msg: "token验证失败，请重新登录.",
-    });
-    return;
+    res.status(401).send(R.fail("token验证失败，请重新登录."))
   } else {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get("env") === "development" ? err : {};
-    // render the error page
-    res.status(err.status || 500);
-    res.render("error");
-    // 直接退出，避免多次请求
-    return;
+    res.locals.message = err.message
+    res.locals.error = req.app.get("env") === "development" ? err : {}
+    res.status(err.status || 500)
+    res.render("error")
   }
-});
+  next()
+})
 
 module.exports = app;

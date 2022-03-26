@@ -8,9 +8,6 @@ const TYPE_JPG_WITH_PREFIX = PREFIX + "jpg";
 const TYPE_PNG_WITH_PREFIX = PREFIX + "png";
 const TYPE_GIF_WITH_PREFIX = PREFIX + "gif";
 
-// 私有秘钥
-const PRIVITE_KEY = "school_token";
-
 // 状态码
 class baseResultCode {
   // 成功
@@ -103,6 +100,5 @@ module.exports = {
   partnerEmail,
   User,
   TimeSecound,
-  PRIVITE_KEY,
   App
 };
