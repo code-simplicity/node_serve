@@ -9,9 +9,13 @@ const userServer = require("../server/portal/user")
 const jwt = require("jsonwebtoken");
 const jwtUtils = require("../utils/jwtUtils")
 const Constants = require("../utils/Constants")
+const redis = require("../config/redis")
 const loginAuth = async (req, res, next) => {
+    // 这里我们从redis中拿去这个tokenKey,大概是这样P_cd051f4acac232eebfe9f55c2b2777ef
+    const tokenKey = String(req.headers.authorization || "").split(",").pop()
+    console.log("tokenKey", tokenKey)
     // 获取tokenKey的头部
-    const token = String(req.headers.authorization || "").split(" ").pop
+    const token = await redis.getString(Constants.User.TOKEN_KEY + tokenKey)
     // 验证荷载 
     let payload = await jwtUtils.verToken(token)
     console.log("payload", payload)

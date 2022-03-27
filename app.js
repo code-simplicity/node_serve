@@ -3,14 +3,12 @@ const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const bodyParser = require('body-parser')
+const methodOverride = require('method-override')
 const app = express();
-
 const {
   jwtAuth
 } = require("./utils/jwtUtils")
-
-// 返回结果的封装
-const R = require("./utils/R")
 
 const userRouter = require("./routes/user");
 const excelRouter = require("./routes/excel");
@@ -40,12 +38,16 @@ app.use((req, res, next) => {
     res.set({
       "Access-Control-Allow-Credentials": true, //允许后端发送cookie
       "Access-Control-Allow-Origin": req.headers.origin || "*", //任意域名都可以访问,或者基于我请求头里面的域
-      "Access-Control-Allow-Headers": "X-Requested-With,Content-Type", //设置请求头格式和类型
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested_With", //设置请求头格式和类型
       "Access-Control-Allow-Methods": "PUT,POST,GET,DELETE,OPTIONS", //允许支持的请求方式
       "Content-Type": "application/json; charset=utf-8", //默认与允许的文本格式json和编码格式
     });
   }
-  req.method === "OPTIONS" ? res.status(204).end() : next();
+  if (req.method.toLowerCase() == "options") {
+    res.status(204).send(200)
+  } else {
+    next()
+  }
 });
 
 app.use(logger("dev"));
@@ -57,22 +59,6 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-
-// 验证token是否过期，并且规定哪一些路由是不需要token的，
-// 校验token，获取headers⾥里里的Authorization的token，要写在路由加载之前，静态资源之后
-// app.use(jwtAuth);
-// app.use(
-//   expressJWT({
-//     // 设置令牌
-//     secret: Constants.User.USER_COOKIE_DATA,
-//     // 设置加密算法
-//     algorithms: ["HS256"],
-//     // 校验是否存在token，有token才可以访问
-//     credentialsRequired: true,
-//   }).unless({
-//     path: ["/portal/user/login", "/portal/user/add", "/portal/user/check-token", "/captcha", "/portal/user/logout", "/portal/user/info"],
-//   })
-// );
 
 // 加载路由
 app.use("/", userRouter, captchaRouter);
@@ -89,18 +75,46 @@ app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter);
 
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+function logErrors(err, req, res, next) {
+  console.error(err.stack)
+  next(err)
+}
+
+function clientErrorHandler(err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({
+      error: 'Something failed!'
+    })
+  } else {
+    next(err)
+  }
+}
+
+function errorHandler(err, req, res, next) {
+  res.status(500)
+  res.render('error', {
+    error: err
+  })
+}
+
+app.use(bodyParser.urlencoded({
+  extended: true
+}))
+app.use(bodyParser.json())
+app.use(methodOverride())
+app.use(logErrors)
+app.use(clientErrorHandler)
+app.use(errorHandler)
+
 // 错误处理
 app.use((err, req, res, next) => {
-  console.log('err', err)
-  if (err.name === "UnauthorizedError") {
-    res.status(401).send(R.fail("token验证失败，请重新登录."))
-  } else {
-    res.locals.message = err.message
-    res.locals.error = req.app.get("env") === "development" ? err : {}
-    res.status(err.status || 500)
-    res.render("error")
-  }
-  next()
+  res.locals.message = err.message
+  res.locals.error = req.app.get("env") === "development" ? err : {}
+  res.status(err.status || 500).send('Something broke!')
 })
 
 module.exports = app;

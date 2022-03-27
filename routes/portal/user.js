@@ -58,7 +58,7 @@ router.post("/user/login", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portal/user/info
  * @apiVersion 1.0.0
  */
-router.get("/user/info", loginAuth, async (req, res, next) => {
+router.get("/user/info", loginAuth, async (req, res) => {
     await userController.getUserInfo(req.query, res)
 })
 
@@ -75,49 +75,8 @@ router.get("/user/info", loginAuth, async (req, res, next) => {
  * @apiSampleRequest http://localhost:5050/portal/user/update/info
  * @apiVersion 1.0.0
  */
-router.put("/user/update/info", async (req, res) => {
-    // 这里更新的只有用户名和性别
-    const user = req.body
-    // 从token中解析user
-    // 只有用户才能修改自己的信息
-    const userFromTokenKey = await checkUser(req)
-    console.log("userFromTokenKey ==》", userFromTokenKey)
-    if (userFromTokenKey === null) {
-        return res.send(R.fail("用户未登陆."))
-    }
-    // 找到用户的相关信息
-    const {
-        dataValues
-    } = await UserModel.findOne({
-        where: {
-            id: userFromTokenKey.id
-        }
-    })
-    // 判断两个id是否相等
-    if (dataValues.id !== user.id) {
-        return res.send(R.fail("没有权限操作."))
-    }
-    // 可以进行修改了
-    if (utils.isEmpty(user.user_name) && user.user_name !== userFromTokenKey.user_name) {
-        return res.send(R.fail("姓名不可以为空."))
-    }
-    if (utils.isEmpty(user.sex)) {
-        return res.send(R.fail("性别不可以为空."))
-    }
-    const [update] = await UserModel.update(user, {
-        where: {
-            id: dataValues.id
-        }
-    })
-    // 更新成功
-    if (update) {
-        // 干掉redis中的token,下一次重新建立一个
-        const tokenKey = utils.getCookieKey(req.cookies, Constants.User.USER_COOKIE_DATA)
-        redis.delString(Constants.User.TOKEN_KEY + tokenKey)
-        return res.send(R.success({}, "用户信息更新成功."))
-    } else {
-        return res.send(R.fail("用户信息更新失败."))
-    }
+router.put("/user/update/info", loginAuth, async (req, res) => {
+    await userController.updateUserInfo(req.body, req, res)
 })
 
 /**
@@ -131,39 +90,8 @@ router.put("/user/update/info", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portal/user/reset-password
  * @apiVersion 1.0.0
  */
-router.put("/user/reset-password", async (req, res) => {
-    const {
-        id,
-        password
-    } = req.body
-    if (utils.isEmpty(id)) {
-        return res.send(R.fail("学号不可以为空."))
-    }
-    if (utils.isEmpty(password)) {
-        return res.send(R.fail("密码不可以为空."))
-    }
-    if (password.length !== 32) {
-        return res.send(R.fail("请使用md5进行加密."))
-    }
-    const user = await UserModel.findOne({
-        where: {
-            id
-        }
-    })
-    if (user === null) {
-        return res.send(R.fail("该用户不存在."))
-    }
-    // 对密码进行加密入库
-    const [update] = await UserModel.update({
-        password: utils.desEncrypt(password, Constants.User.PASSWORD_MESSAGE)
-    }, {
-        where: {
-            id
-        }
-    })
-    if (update) {
-        return res.send(R.success({}, "重置密码成功."))
-    }
+router.put("/user/reset-password", loginAuth, async (req, res) => {
+    await userController.resetPassWord(req.body, req, res)
 })
 
 /**
@@ -175,25 +103,8 @@ router.put("/user/reset-password", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/portal/user/logout
  * @apiVersion 1.0.0
  */
-router.get("/user/logout", async (req, res) => {
-    // 拿到token_key
-    const tokenKey = utils.getCookieKey(req.cookies, Constants.User.USER_COOKIE_DATA)
-    if (utils.isEmpty(tokenKey)) {
-        return res.send(R.fail("账户未登陆."))
-    }
-    // 删除redis中的token
-    redis.delString(Constants.User.TOKEN_KEY + tokenKey)
-    // 删除mysql中的refreshtoken
-    await RefreshTokenModel.update({
-        token_key: ""
-    }, {
-        where: {
-            token_key: tokenKey
-        }
-    })
-    // 删除cookie中的token_key
-    utils.delCookieKey(res, Constants.User.USER_COOKIE_DATA)
-    return res.send(R.success({}, "退出登录成功."))
+router.get("/user/logout", loginAuth, async (req, res) => {
+    await userController.logout(req, res)
 });
 
 /**
@@ -201,8 +112,6 @@ router.get("/user/logout", async (req, res) => {
  * @apiDescription 获取用户总数
  * @apiName 门户
  * @apiGroup PortalUser
- * @apiBody  {String} id="1807010210" 学号
- * @apiBody  {String} password="123456" 密码
  * @apiSuccess {json} result
  * @apiSampleRequest http://localhost:5050/portal/user/count
  * @apiVersion 1.0.0
@@ -219,46 +128,26 @@ router.get("/user/count", async (req, res) => {
  * @apiDescription 查询当前用户，并且添加得分
  * @apiName 门户
  * @apiGroup PortalUser
- * @apiBody  {String} id="1807010210" 学号
- * @apiBody  {String} score="0" 得分
  * @apiSuccess {json} result
  * @apiSampleRequest http://localhost:5050/portal/user/add/score
  * @apiVersion 1.0.0
  */
-router.post("/user/add/score", async (req, res) => {
-    const {
-        id,
-        score
-    } = req.body;
-    if (score > 100 || score < 0) {
-        return res.send(R.fail(`当前输入得分为${score}：得分不能低于0，不能超过100.`))
-    }
-    if (utils.isEmpty(id)) {
-        return res.send(R.fail("学号不可以为空."))
-    }
-    // 更新查询
-    const [update] = await UserModel.update({
-        score: score,
-    }, {
-        where: {
-            id: id,
-        },
-    })
-    const {
-        dataValues
-    } = await UserModel.findOne({
-        where: {
-            id: id
-        }
-    })
-    if (update || dataValues.score === score) {
-        return res.send(R.success({
-            score: score
-        }, `当前获得分数：${score}分.`))
-    } else {
-        return res.send(R.fail("添加得分失败，视频未看完或者有其他任务未完成！"))
-    }
+router.post("/user/add/score", loginAuth, async (req, res) => {
+    await userController.addUserScore(req.body, res)
 });
+
+/**
+ * @api {get} /portal/user/reset-email 重置邮箱
+ * @apiDescription 重置邮箱
+ * @apiName 门户
+ * @apiGroup PortalUser
+ * @apiSuccess {json} result
+ * @apiSampleRequest http://localhost:5050/portal/user/reset-email
+ * @apiVersion 1.0.0
+ */
+router.put("/user/reset-email", loginAuth, async (req, res) => {
+    await userController.resetUserEmail(req.body, req, res)
+})
 
 /**
  * @api {get} /portal/user/check-token 检查用户是否登录

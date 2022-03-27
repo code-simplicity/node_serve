@@ -16,39 +16,24 @@ const jwtAuth = expressJwt({
 
 module.exports = {
     // 生成token的方法
-    setToken(id) {
-        return new Promise((resolve, reject) => {
-            // token过期时间为10天过期
-            const token = jwt.sign({
-                id
-            }, Constants.User.USER_COOKIE_DATA, {
-                expiresIn: 10 * 24 * 60 * 60
-            })
-            resolve(token);
+    async setToken(user) {
+        const token = await jwt.sign({
+            user
+        }, Constants.User.USER_COOKIE_DATA, {
+            expiresIn: "1h"
         })
+        return token
     },
 
     // 解析token
-    // verToken(token) {
-    //     return new Promise((resolve, reject) => {
-    //         jwt.verify(token, Constants.User.USER_COOKIE_DATA, {
-    //             algorithms: ['HS256']
-    //         }, (err, decoded) => {
-    //             if (err) {
-    //                 reject(-1)
-    //             } else {
-    //                 resolve(decoded)
-    //             }
-    //         })
-    //     })
-    // },
-
     async verToken(token) {
-        const data = jwt.verify(token, Constants.User.USER_COOKIE_DATA, {
+        const {
+            user
+        } = jwt.verify(token, Constants.User.USER_COOKIE_DATA, {
             algorithms: ['HS256']
         }, (err, decoded) => err ? -1 : decoded)
-        console.log("data", data)
-        return data
+        console.log("user", user)
+        return user
     },
 
     // token验证
