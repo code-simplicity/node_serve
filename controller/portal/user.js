@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken")
 const CryptoJS = require("crypto-js")
-const serverUser = require("../../server/portal/user")
+const userServer = require("../../server/portal/user")
 const serverRefreshToken = require("../../server/portal/refreshToken")
 const UserModel = require("../../models/UserModel")
 const {
@@ -31,12 +31,12 @@ const user = {
                 captcha
             } = args
             // 获取用户信息，判断该用户是否存在
-            const user = await serverUser.getUserInfo(id)
+            const user = await userServer.getUserInfo(id)
             if (user !== null) {
                 // 存在那么就返回该用户已经存在
                 return res.status(resCode.UnprocessableEntity.code).send(new FailModel("用户已存在"))
             }
-            const emailInfo = await serverUser.checkEmail(email)
+            const emailInfo = await userServer.checkEmail(email)
             // 邮箱已经存在
             if (emailInfo !== null) {
                 return res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱已存在"))
@@ -80,7 +80,7 @@ const user = {
             }
             const {
                 dataValues
-            } = await serverUser.register(params)
+            } = await userServer.register(params)
             if (dataValues !== null) {
                 return res.send(new SuccessModel("注册成功"))
             } else {
@@ -121,7 +121,7 @@ const user = {
             return res.status(resCode.UnprocessableEntity.code).send(new FailModel("密码不可以为空"))
         }
         // 查找用户
-        const user = await serverUser.getUserInfo(id)
+        const user = await userServer.getUserInfo(id)
         if (user === null) {
             return res.status(resCode.UnprocessableEntity.code).send(new FailModel("用户名或者密码不正确"))
         }
@@ -173,7 +173,7 @@ const user = {
         const {
             id
         } = args
-        const result = await serverUser.getUserInfo(id)
+        const result = await userServer.getUserInfo(id)
         console.log("result", result)
         if (!result) {
             return res.send(new FailModel("用户不存在"))
@@ -221,7 +221,7 @@ const user = {
         // 找到用户的相关信息
         const {
             dataValues
-        } = await serverUser.getUserInfo(id)
+        } = await userServer.getUserInfo(id)
         // 判断两个id是否相等
         if (dataValues.id !== id) {
             return res.status(resCode.NoAuthority.code).send(new FailModel(resCode.NoAuthority.codeMsg))
@@ -238,7 +238,7 @@ const user = {
             user_name,
             sex,
         }
-        const [result] = await serverUser.updateUserInfo(params)
+        const [result] = await userServer.updateUserInfo(params)
         // 更新成功
         if (result) {
             // 干掉redis中的token,下一次重新建立一个
@@ -288,7 +288,7 @@ const user = {
         }
         const {
             dataValues
-        } = await serverUser.getUserInfo(id)
+        } = await userServer.getUserInfo(id)
         if (dataValues === null) {
             return res.send(new FailModel("该用户不存在"))
         }
@@ -297,7 +297,7 @@ const user = {
             id,
             password: utils.desEncrypt(password, Constants.User.PASSWORD_MESSAGE)
         }
-        const [update] = await serverUser.resetPassWord(param)
+        const [update] = await userServer.resetPassWord(param)
         if (update) {
             return res.send(new SuccessModel("重置密码成功"))
         } else {
@@ -347,7 +347,7 @@ const user = {
             id,
             score
         }
-        const [result] = await serverUser.addUserScore(params)
+        const [result] = await userServer.addUserScore(params)
         if (result) {
             return res.send(new SuccessModel({
                 score: score
@@ -382,7 +382,7 @@ const user = {
             return res.send(new FailModel("图灵验证码不可以为空"))
         }
         // 首先判断邮箱是否存在，存在其实就不用更改
-        const emailInfo = await serverUser.checkEmail(email)
+        const emailInfo = await userServer.checkEmail(email)
         // 邮箱已经存在
         if (emailInfo !== null) {
             return res.send(new FailModel("邮箱已存在"))
@@ -417,7 +417,7 @@ const user = {
             email
         }
         // 一致那就更新邮箱
-        const [result] = await serverUser.updateUserEmail(params)
+        const [result] = await userServer.updateUserEmail(params)
         if (result) {
             return res.send(new SuccessModel("邮箱更新成功"))
         }

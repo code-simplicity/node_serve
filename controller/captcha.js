@@ -25,10 +25,10 @@ const captcha = {
             size: 4,
             noise: 1,
             color: true,
-            background: '#BCBCBC',
-            height: 40,
+            background: '#FEFEFC',
+            height: 30,
             width: 100,
-            fontSize: 38
+            fontSize: 36
         })
         // 发送类型为svg
         res.type("svg")
