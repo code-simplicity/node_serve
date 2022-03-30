@@ -9,7 +9,7 @@ const loginAuth = require("../../middleware/loginAuth");
  * @apiSampleRequest http://localhost:5050/waveforms/search/point_id
  * @apiVersion 1.0.0
  */
-router.post("/user/wavestats/point_id/findOne", async (req, res) => {
+router.post("/user/wavestats/point_id/findOne", loginAuth, async (req, res) => {
     await wavestatsController.wavestatsByPointIdFindOne(req.body, res)
 
 });

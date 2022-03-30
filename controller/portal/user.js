@@ -141,7 +141,7 @@ const user = {
         // 将tokenKey写入cookie中，需要动态获取的话直接从request.cookies拿取
         // 设置cookie，
         console.log("tokenKey ==== >", tokenKey)
-        utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.TEN_DAY)
+        utils.setCookieKey(res, Constants.User.USER_COOKIE_DATA, tokenKey, Constants.TimeSecound.DAY)
         // 删除验证码创建的LAST_CAPTCHA_ID的cookie
         utils.delCookieKey(res, Constants.User.LAST_CAPTCHA_ID)
         // 将这个tokenKey和id返回给前端，之后前端将这个tokenKey保存，然后通过设置在headers.authorization来验证码接口
@@ -425,53 +425,6 @@ const user = {
 }
 
 /**
- * 检查用户是否登录，如果登录就返回用户信息
- * @param {*} request 请求
- */
-async function checkUser(request) {
-    // 首先是拿到token_key
-    const tokenKey = utils.getCookieKey(request.cookies, Constants.User.USER_COOKIE_DATA)
-    console.log("user tokenKey", tokenKey)
-    if (utils.isEmpty(tokenKey)) {
-        return null
-    }
-    // 解析token信息
-    const userInfo = await parseByTokenKey(tokenKey)
-    console.log("userinfo ==>", userInfo)
-    if (userInfo === null) {
-        // 说明是解析出错，那么token就过期了，我们可以从refreshtoken表中查询是否存在
-        const refreshToken = await RefreshTokenModel.findOne({
-            where: {
-                refresh_token: tokenKey
-            }
-        })
-        if (refreshToken === null) {
-            console.log("refreshToken is null")
-            return null
-        }
-        // 存在就解析
-        try {
-            jwtUtils.verToken(refreshToken.dataValues.refresh_token)
-            // 如果这个token存在，那么就创建新的token和refresh_token
-            const userId = refreshToken.dataValues.user_id
-            const userForm = await UserModel.findOne({
-                where: {
-                    id: userId
-                }
-            })
-            // 删除refresh_token的记录
-            const newTokenKey = createToken(request.cookies, userForm)
-            console.log("正在创建新的tokenkey")
-            return parseByTokenKey(newTokenKey)
-        } catch (error) {
-            console.log('refresh_token 过期了')
-            return null
-        }
-    }
-    return userInfo
-}
-
-/**
  * 创建token
  * @param {*} request 请求
  * @param {*} response 响应
@@ -513,7 +466,7 @@ async function createToken(request, user, from) {
     // 首先判断数据库中refreshToken存在吗，如果存在就更新，否者就建立
     const refreshToken = await serverRefreshToken.getRefreshTokenByUserId(user.id)
     //不管是过期了还是重新登陆，都生成/更新refreshToken
-    const refreshTokenValue = await jwtUtils.setToken(user.id)
+    const refreshTokenValue = await jwtUtils.setToken(user)
     console.log("refreshTokenValue ==>", refreshTokenValue)
     // 保存到数据库
     const param = {
@@ -525,30 +478,6 @@ async function createToken(request, user, from) {
         await serverRefreshToken.createRefreshToken(param)
     }
     return tokenKey
-}
-
-/**
- * 解析token的信息
- * @param {*} tokenKey 
- */
-async function parseByTokenKey(tokenKey) {
-    console.log('tokenKey ====>', tokenKey)
-    const token = await redis.getString(Constants.User.TOKEN_KEY + tokenKey)
-    console.log("token ==>", token)
-    if (token !== null) {
-        // 解析token
-        try {
-            const {
-                id
-            } = await jwtUtils.verToken(token)
-            console.log("id ==>", id)
-            return id
-        } catch (error) {
-            console.log('token过期了', token过期了)
-            return null
-        }
-    }
-    return null
 }
 
 module.exports = user

@@ -20,7 +20,7 @@ module.exports = {
         const token = await jwt.sign({
             user
         }, Constants.User.USER_COOKIE_DATA, {
-            expiresIn: "1h"
+            expiresIn: "24h"
         })
         return token
     },

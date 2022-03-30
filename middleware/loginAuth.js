@@ -5,8 +5,7 @@ const {
     FailModel
 } = require("../response/response")
 const resCode = require("../utils/resCode")
-const userServer = require("../server/portal/user")
-const jwt = require("jsonwebtoken");
+const refreshTokenServer = require("../server/portal/refreshToken")
 const jwtUtils = require("../utils/jwtUtils")
 const Constants = require("../utils/Constants")
 const redis = require("../config/redis")
@@ -22,15 +21,19 @@ const loginAuth = async (req, res, next) => {
     console.log("token ====>", token)
     if (token) {
         if (payload === undefined || payload === "" || payload === -1) {
+            // token失效，删除掉redis中的token
+            await redis.delString(Constants.User.TOKEN_KEY + tokenKey)
             res.status(401).send({
                 code: resCode.SessionExpired.code,
                 codeMsg: resCode.SessionExpired.codeMsg,
                 msg: "token失效，请重新登录！"
             })
         } else {
-            // 权限校验
-            req.user = await userServer.getUserInfo(payload.id)
+            // 权限校验,判断refresh存在token吗，如果存在，就将这个token给前端
+            req.user = await refreshTokenServer.getRefreshTokenByUserId(payload.id)
             if (!req.user) {
+                // user不存在就删除掉redis中的token
+                await redis.delString(Constants.User.TOKEN_KEY + tokenKey)
                 res.status(401).send(
                     new FailModel("请先登录")
                 )
@@ -38,6 +41,7 @@ const loginAuth = async (req, res, next) => {
             next()
         }
     } else {
+        await redis.delString(Constants.User.TOKEN_KEY + tokenKey)
         res.status(401).send({
             code: resCode.ArgsError.status,
             codeMsg: resCode.ArgsError.codeMsg,
