@@ -29,6 +29,8 @@ const portalVideoRouter = require("./routes/portal/video");
 const portalChooseRouter = require("./routes/portal/choose");
 const portalPortPointMapRouter = require("./routes/portal/portpointmap");
 const portalPointMapRouter = require("./routes/portal/point");
+const portalWaveFormsRouter = require("./routes/portal/waveforms");
+const portalWaveStatsRouter = require("./routes/portal/wavestats");
 
 const captchaRouter = require("./routes/captcha");
 // 添加测试功能代码
@@ -82,7 +84,7 @@ app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
-  portalPointMapRouter
+  portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter
 );
 
 app.use(function (req, res, next) {
