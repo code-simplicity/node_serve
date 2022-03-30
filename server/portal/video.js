@@ -1,3 +1,6 @@
+const {
+    Op
+} = require("sequelize");
 const VideoModel = require("../../models/VideoModel")
 
 const video = {
@@ -10,6 +13,34 @@ const video = {
             order: [
                 ["create_time"]
             ]
+        })
+        return result
+    },
+
+    /**
+     * 通过所属内容查找对应的视频
+     * @param {*} args 
+     * @returns 
+     */
+    async videoSearchFindOne(args) {
+        const {
+            water_level,
+            wave_direction,
+            embank_ment,
+        } = args;
+        const result = await VideoModel.findOne({
+            where: {
+                [Op.and]: [{
+                        water_level: water_level,
+                    },
+                    {
+                        wave_direction: wave_direction,
+                    },
+                    {
+                        embank_ment: embank_ment,
+                    },
+                ],
+            },
         })
         return result
     }
