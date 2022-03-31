@@ -3,6 +3,10 @@ const path = require("path");
 const fs = require("fs-extra");
 // 加密库
 const CryptoJS = require("crypto-js")
+const refreshTokenServer = require("../server/portal/refreshToken")
+const jwtUtils = require("./jwtUtils")
+const redis = require("../config/redis")
+
 // 创建文件夹
 const mkdirsSync = (dirname) => {
   if (fs.existsSync(dirname)) {
@@ -172,6 +176,61 @@ function desDecrypt(ciphertext, desKey) {
   return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
+/**
+ * 创建token
+ * @param {*} req 请求
+ * @param {*} user 用户信息
+ * @param {*} from 来自设备
+ */
+async function createToken(req, user, from) {
+  const oldTokenKey = getCookieKey(req.cookies, Constants.User.USER_COOKIE_DATA)
+  console.log("oldTokenKey ==>", oldTokenKey)
+  // 不能干掉
+  const oldRefreshToken = await refreshTokenServer.getRefreshTokenByUserId(user.id)
+  // 判断来源是否一致
+  if (Constants.App.FROM_PC === from) {
+    if (oldRefreshToken !== null) {
+      redis.delString(Constants.User.TOKEN_KEY + oldRefreshToken.dataValues.token_key)
+    }
+    console.log("oldRefreshToken ==>", oldRefreshToken)
+    //删除对应的token_key，置空
+    await refreshTokenServer.updateRefreshToken(oldTokenKey)
+  }
+  // 生成token，根据用户id,保存时间为10天
+  // 对对象进行解构，移除密码
+  const {
+    password,
+    ...userForm
+  } = user
+  const claims = {
+    ...userForm,
+    from: from
+  }
+  const token = await jwtUtils.setToken(claims)
+  // 返回token的md5值，token保存在redis中
+  // 前端访问的时候，携带token的md5，从redis中获取
+  const tokenKey = from + CryptoJS.MD5(token).toString()
+  console.log("createToken token", token)
+  console.log("createToken tokenKey", tokenKey)
+  // 保存在redis中,一小时过期
+  redis.setString(Constants.User.TOKEN_KEY + tokenKey, token, Constants.TimeSecound.DAY)
+  // 首先判断数据库中refreshToken存在吗，如果存在就更新，否者就建立
+  const refreshToken = await refreshTokenServer.getRefreshTokenByUserId(user.id)
+  //不管是过期了还是重新登陆，都生成/更新refreshToken
+  const refreshTokenValue = await jwtUtils.setToken(user)
+  console.log("refreshTokenValue ==>", refreshTokenValue)
+  // 保存到数据库
+  const param = {
+    user_id: user.id,
+    refresh_token: refreshTokenValue,
+    create_time: new Date()
+  }
+  if (refreshToken === null) {
+    await refreshTokenServer.createRefreshToken(param)
+  }
+  return tokenKey
+}
+
 module.exports = {
   dateFormat,
   getType,
@@ -185,5 +244,6 @@ module.exports = {
   setCookieKey,
   delCookieKey,
   desEncrypt,
-  desDecrypt
+  desDecrypt,
+  createToken
 };

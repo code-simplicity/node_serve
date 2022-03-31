@@ -21,6 +21,8 @@ const wavestatsRouter = require("./routes/wavestats");
 const portpointmapRouter = require("./routes/portpointmap");
 const pointRouter = require("./routes/point");
 const portmapRouter = require("./routes/portmap");
+
+// 门户接口
 const portalUserRouter = require("./routes/portal/user");
 const portalUserExRouter = require("./routes/portal/userEx");
 const portalContentRouter = require("./routes/portal/content");
@@ -32,6 +34,10 @@ const portalPointMapRouter = require("./routes/portal/point");
 const portalWaveFormsRouter = require("./routes/portal/waveforms");
 const portalWaveStatsRouter = require("./routes/portal/wavestats");
 
+// 管理员接口
+const adminUserRouter = require("./routes/admin/userRouter")
+
+// 图灵验证码
 const captchaRouter = require("./routes/captcha");
 // 添加测试功能代码
 const testRouter = require("./routes/test/code");
@@ -86,6 +92,8 @@ app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
   portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter
 );
+
+app.use("/admin", adminUserRouter);
 
 app.use(function (req, res, next) {
   next(createError(404));
