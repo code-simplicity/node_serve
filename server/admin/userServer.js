@@ -13,6 +13,20 @@ const userServer = {
             }
         })
         return result
+    },
+
+    /**
+     * 获取用户信息
+     * @param {*} id 
+     * @returns 
+     */
+    async getUserInfo(id) {
+        const result = await UserModel.findOne({
+            where: {
+                id
+            }
+        })
+        return result
     }
 }
 module.exports = userServer

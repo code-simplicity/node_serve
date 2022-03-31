@@ -87,6 +87,32 @@ const userController = {
         } catch (error) {
             return res.status(resCode.UnprocessableEntity.code).send(new FailModel("登录失败，请检查重试"))
         }
+    },
+
+    /**
+     * 获取用户信息
+     * @param {*} args 
+     * @param {*} res 
+     */
+    async getUserInfo(args, res) {
+        const {
+            id
+        } = args
+        if (utils.isEmpty(id)) {
+            return res.status(resCode.UnprocessableEntity.code).send(new FailModel("id不可以为空"))
+        }
+        const {
+            dataValues
+        } = await userServer.getUserInfo(id)
+        const {
+            password,
+            ...data
+        } = dataValues
+        if (dataValues !== null) {
+            return res.send(new SuccessModel(data, "获取用户信息成功"))
+        } else {
+            return res.send(new FailModel("获取用户信息失败"))
+        }
     }
 }
 
