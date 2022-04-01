@@ -4,7 +4,6 @@ const {
     FailModel
 } = require('../../response/response');
 const utils = require("../../utils/utils");
-const resCode = require("../../utils/resCode");
 const fs = require("fs");
 const xlsx = require("node-xlsx");
 const MD5 = require("md5")
@@ -105,6 +104,86 @@ const excelController = {
             );
         } catch (error) {
             return res.send(new FailModel("导入异常，请重新尝试"));
+        }
+    },
+
+    /**
+     * 用户批量导出
+     * @param {*} args 
+     * @param {*} res 
+     */
+    async excelUserDownload(args, res) {
+        // 数组，每个值直接用逗号隔开
+        const {
+            ids
+        } = args;
+        if (ids.length <= 0) {
+            return res.send(new FailModel("ids不可以为空"))
+        }
+        const result = await excelServer.excelUserDownload(ids)
+        if (result.length > 0) {
+            const exportData = JSON.parse(JSON.stringify(result));
+            const excelData = [{
+                name: "用户模板.xlsx",
+                data: [
+                    [
+                        "学号",
+                        "姓名",
+                        "密码",
+                        "性别",
+                        "邮箱",
+                        "角色",
+                        "状态",
+                        "得分",
+                        "创建时间",
+                        "更新时间",
+                    ],
+                ],
+            }, ];
+            const optionArr = {
+                "!cols": [{
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 10,
+                    },
+                    {
+                        wch: 20,
+                    },
+                    {
+                        wch: 20,
+                    },
+                ],
+            };
+            exportData.map((item) => {
+                const exportArr = [];
+                for (const key in item) {
+                    exportArr.push(item[key]);
+                }
+                //  装载数据
+                excelData[0].data.push(exportArr);
+            });
+            return res.send(xlsx.build(excelData, optionArr));
+        } else {
+            return res.send(new FailModel("用户数据导出失败，请勾选对应的表格数据"));
         }
     }
 }

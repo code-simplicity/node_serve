@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const excelController = require("../../controller/admin/excelController")
+const loginAuth = require("../../middleware/loginAuth");
 // 处理excel文件
 const upload = multer({
     dest: "../public/upload",
@@ -12,10 +13,10 @@ const upload = multer({
  * 3. 前端批量导出，传递过来ids，我们利用ids查询，然后生成数据，blob流返回给前端
  */
 /**
- * @api {get} /excel/export excel模板生成
+ * @api {get} /user/excel/export excel模板生成
  * @apiSampleRequest http://localhost:5050/admin/user/excel/export
  */
-router.get("/user/excel/export", async (req, res) => {
+router.get("/user/excel/export", loginAuth, async (req, res) => {
     await excelController.exportExcel(res)
 })
 
@@ -24,8 +25,17 @@ router.get("/user/excel/export", async (req, res) => {
  * @apiSampleRequest http://localhost:5050/admin/user/excel/upload
  * @apiVersion 1.0.0
  */
-router.post("/user/excel/upload", upload.single("file"), async (req, res) => {
+router.post("/user/excel/upload", upload.single("file"), loginAuth, async (req, res) => {
     await excelController.excelUploadUser(req, res)
+});
+
+/**
+ * @api {post} /admin/user/excel/download 表格数据导出
+ * @apiSampleRequest http://localhost:5050/admin/user/excel/download
+ * @apiVersion 1.0.0
+ */
+router.post("/user/excel/download", loginAuth, async (req, res) => {
+    await excelController.excelUserDownload(req.body, res)
 });
 
 module.exports = router
