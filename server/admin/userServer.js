@@ -144,6 +144,6 @@ const userServer = {
             }
         })
         return result
-    }
+    },
 }
 module.exports = userServer
