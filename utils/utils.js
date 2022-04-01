@@ -103,7 +103,7 @@ function formatZero(num, len) {
 
 // 判断字符串是否为空
 function isEmpty(text) {
-  return text === null || text === undefined ? true : false
+  return text === null || text === undefined || text === "" ? true : false
 }
 
 /**
