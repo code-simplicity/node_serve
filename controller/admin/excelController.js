@@ -83,7 +83,7 @@ const excelController = {
                         // 判断是不是使用的指定模板导入的  "学号,姓名,密码,性别,邮箱,角色,状态,得分"
                         if (excelDataString === "学号,姓名,密码,性别,邮箱,角色,状态,得分") {
                             // 删除二位数组第一项，也就是表头数据
-                            // dataArr.shift();
+                            dataArr.shift();
                             // 遍历
                             dataArr.map(async (item) => {
                                 excelHead.map((key, index) => {

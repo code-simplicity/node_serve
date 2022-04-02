@@ -46,7 +46,7 @@ const UserModel = sequelizedb.define('tb_user', {
     },
     // 状态，0表示删除，1表示正常
     state: {
-        type: DataTypes.STRING(1),
+        type: DataTypes.STRING(5),
         defaultValue: '1',
         comment: '状态，0表示删除，1表示正常'
 
