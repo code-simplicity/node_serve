@@ -10,12 +10,7 @@ const {
   jwtAuth
 } = require("./utils/jwtUtils")
 
-const userRouter = require("./routes/user");
-const excelRouter = require("./routes/excel");
-const imageRouter = require("./routes/image");
 const videoRouter = require("./routes/video");
-const chooseRouter = require("./routes/choose");
-const contentRouter = require("./routes/content");
 const waveformsRouter = require("./routes/waveforms");
 const wavestatsRouter = require("./routes/wavestats");
 const portpointmapRouter = require("./routes/portpointmap");
@@ -39,6 +34,7 @@ const adminUserRouter = require("./routes/admin/userRouter")
 const adminExcelRouter = require("./routes/admin/excelRouter")
 const adminChooseRouter = require("./routes/admin/chooseRouter")
 const adminContentRouter = require("./routes/admin/contentRouter")
+const adminVideoRouter = require("./routes/admin/videoRouter")
 
 // 图灵验证码
 const captchaRouter = require("./routes/captcha");
@@ -79,12 +75,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 // 加载路由
-app.use("/", userRouter, captchaRouter);
-app.use("/excel", excelRouter);
-app.use("/image", imageRouter);
+app.use("/", captchaRouter);
 app.use("/video", videoRouter);
-app.use("/choose", chooseRouter);
-app.use("/content", contentRouter);
 app.use("/waveforms", waveformsRouter);
 app.use("/wavestats", wavestatsRouter);
 app.use("/portpointmap", portpointmapRouter);
@@ -97,7 +89,7 @@ app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
 );
 
 app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
-  adminContentRouter);
+  adminContentRouter, adminVideoRouter);
 
 app.use(function (req, res, next) {
   next(createError(404));
