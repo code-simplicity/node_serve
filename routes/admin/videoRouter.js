@@ -45,7 +45,7 @@ router.put("/video/update", upload.single("video"), loginAuth, async (req, res) 
  * 批量删除
  * /admin/video/batch/delete
  */
-router.delete("/video/batch/delete", async (req, res) => {
+router.delete("/video/batch/delete", loginAuth, async (req, res) => {
     await videoController.batchDeleteVideo(req.body, res)
 })
 
@@ -53,7 +53,7 @@ router.delete("/video/batch/delete", async (req, res) => {
  * 搜索视频
  * /admin/video/search
  */
-router.get("/video/search", async (req, res) => {
+router.get("/video/search", loginAuth, async (req, res) => {
     await videoController.searchVideo(req.query, res)
 })
 
