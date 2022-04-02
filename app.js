@@ -38,6 +38,7 @@ const portalWaveStatsRouter = require("./routes/portal/wavestats");
 const adminUserRouter = require("./routes/admin/userRouter")
 const adminExcelRouter = require("./routes/admin/excelRouter")
 const adminChooseRouter = require("./routes/admin/chooseRouter")
+const adminContentRouter = require("./routes/admin/contentRouter")
 
 // 图灵验证码
 const captchaRouter = require("./routes/captcha");
@@ -95,7 +96,8 @@ app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter
 );
 
-app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter);
+app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
+  adminContentRouter);
 
 app.use(function (req, res, next) {
   next(createError(404));
