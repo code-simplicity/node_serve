@@ -36,6 +36,7 @@ const adminChooseRouter = require("./routes/admin/chooseRouter")
 const adminContentRouter = require("./routes/admin/contentRouter")
 const adminVideoRouter = require("./routes/admin/videoRouter")
 const adminPortMapRouter = require("./routes/admin/portMapRouter")
+const adminPortPointMapRouter = require("./routes/admin/portPointMapRouter")
 
 // 图灵验证码
 const captchaRouter = require("./routes/captcha");
@@ -90,7 +91,8 @@ app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
 );
 
 app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
-  adminContentRouter, adminVideoRouter, adminPortMapRouter);
+  adminContentRouter, adminVideoRouter, adminPortMapRouter, adminPortPointMapRouter,
+);
 
 app.use(function (req, res, next) {
   next(createError(404));
