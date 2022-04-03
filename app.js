@@ -10,12 +10,8 @@ const {
   jwtAuth
 } = require("./utils/jwtUtils")
 
-const videoRouter = require("./routes/video");
 const waveformsRouter = require("./routes/waveforms");
 const wavestatsRouter = require("./routes/wavestats");
-const portpointmapRouter = require("./routes/portpointmap");
-const pointRouter = require("./routes/point");
-const portmapRouter = require("./routes/portmap");
 
 // 门户接口
 const portalUserRouter = require("./routes/portal/user");
@@ -79,12 +75,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // 加载路由
 app.use("/", captchaRouter);
-app.use("/video", videoRouter);
 app.use("/waveforms", waveformsRouter);
 app.use("/wavestats", wavestatsRouter);
-app.use("/portpointmap", portpointmapRouter);
-app.use("/point", pointRouter);
-app.use("/portmap", portmapRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
