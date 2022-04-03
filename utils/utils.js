@@ -231,6 +231,18 @@ async function createToken(req, user, from) {
   return tokenKey
 }
 
+/**
+ * point对比值排序，升序
+ * @param {*} key 
+ */
+function pointCompare(key) {
+  return function (m, n) {
+    let a = m[key]
+    let b = n[key]
+    return a - b
+  }
+}
+
 module.exports = {
   dateFormat,
   getType,
@@ -245,5 +257,6 @@ module.exports = {
   delCookieKey,
   desEncrypt,
   desDecrypt,
-  createToken
+  createToken,
+  pointCompare,
 };

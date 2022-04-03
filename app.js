@@ -6,12 +6,6 @@ const logger = require("morgan");
 const bodyParser = require('body-parser')
 const methodOverride = require('method-override')
 const app = express();
-const {
-  jwtAuth
-} = require("./utils/jwtUtils")
-
-const waveformsRouter = require("./routes/waveforms");
-const wavestatsRouter = require("./routes/wavestats");
 
 // 门户接口
 const portalUserRouter = require("./routes/portal/user");
@@ -34,6 +28,8 @@ const adminVideoRouter = require("./routes/admin/videoRouter")
 const adminPortMapRouter = require("./routes/admin/portMapRouter")
 const adminPortPointMapRouter = require("./routes/admin/portPointMapRouter")
 const adminPointRouter = require("./routes/admin/pointRouter")
+const adminWaveFormsRouter = require("./routes/admin/waveFormsRouter")
+const adminWaveStatsRouter = require("./routes/admin/waveStatsRouter")
 
 // 图灵验证码
 const captchaRouter = require("./routes/captcha");
@@ -75,8 +71,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // 加载路由
 app.use("/", captchaRouter);
-app.use("/waveforms", waveformsRouter);
-app.use("/wavestats", wavestatsRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
@@ -85,7 +79,7 @@ app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
 
 app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
   adminContentRouter, adminVideoRouter, adminPortMapRouter, adminPortPointMapRouter,
-  adminPointRouter
+  adminPointRouter, adminWaveFormsRouter, adminWaveStatsRouter
 );
 
 app.use(function (req, res, next) {
