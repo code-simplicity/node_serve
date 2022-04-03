@@ -25,10 +25,11 @@ const captcha = {
             size: 4,
             noise: 1,
             color: true,
-            background: '#FEFEFC',
-            height: 30,
+            background: '#DBDBDB',
+            height: 32,
             width: 100,
-            fontSize: 36
+            fontSize: 36,
+            ignoreChars: '0oO1ilI', // 验证码字符中排除 0o1i
         })
         // 发送类型为svg
         res.type("svg")
@@ -39,8 +40,10 @@ const captcha = {
          * 2、使用之后删除
          * 3、使用的情况看get
          */
+        // 忽略大小写
+        let text = captcha.text.toLowerCase()
         utils.setCookieKey(res, Constants.User.LAST_CAPTCHA_ID, key, Constants.TimeSecound.DAY)
-        redis.setString(Constants.User.CAPTCHA_CONTENT + key, captcha.text, Constants.TimeSecound.TEN_MIN)
+        redis.setString(Constants.User.CAPTCHA_CONTENT + key, text, Constants.TimeSecound.TEN_MIN)
         // 这个是发送给前端展示的
         return res.send(captcha.data)
     }
