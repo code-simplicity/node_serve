@@ -6,7 +6,7 @@ const {
 const utils = require("../../utils/utils");
 const fs = require("fs");
 const xlsx = require("node-xlsx");
-const MD5 = require("md5")
+const JsMd5 = require("blueimp-md5")
 const Constants = require("../../utils/Constants")
 
 // 定义全局数组 ["学号", "姓名", "密码", "性别", "邮箱", "角色", "状态", "得分"]
@@ -88,8 +88,11 @@ const excelController = {
                             dataArr.map(async (item) => {
                                 excelHead.map((key, index) => {
                                     // 先对password进行一个加密，再添加到数组中，如果这个key为password，那么对该值进行加密
-                                    addData[key] = key === "password" ?
-                                        utils.desEncrypt(MD5(item[index]), Constants.User.PASSWORD_MESSAGE) : item[index];
+                                    if (key === "password") {
+                                        addData[key] = utils.desEncrypt(JsMd5(item[index]), Constants.User.PASSWORD_MESSAGE)
+                                    } else {
+                                        addData[key] = item[index]
+                                    }
                                 });
                                 // 使用模板插入数据
                                 await excelServer.excelUploadUser(addData)
