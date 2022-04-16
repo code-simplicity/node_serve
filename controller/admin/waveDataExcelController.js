@@ -76,7 +76,7 @@ const waveDataExcelController = {
                     if (dataValues !== null) {
                         return res.send(new SuccessModel({
                             ...data
-                        }, "波形统计数据excel上传成功."))
+                        }, "波形统计数据excel上传成功"))
                     } else {
                         return res.send(new FailModel("波形统计数据excel上传失败"))
                     }
@@ -164,7 +164,7 @@ const waveDataExcelController = {
                             type: mimetype,
                             name: originalname
                         }
-                        const [result] = await waveDataExcelServer.updateWaveForms(params)
+                        const [result] = await waveDataExcelServer.updateWaveDataExcel(params)
                         if (result) {
                             return res.send(new SuccessModel({
                                 ...data
@@ -284,7 +284,26 @@ const waveDataExcelController = {
                 })
             }
         })
-    }
+    },
+
+    /**
+     * 搜索点位
+     * @param {*} args 
+     * @param {*} res 
+     */
+    async searchWaveDataExcelByPortPointMapId(args, res) {
+        const {
+            pageNum,
+            pageSize,
+            port_point_map_id,
+        } = args;
+        const result = await waveDataExcelServer.searchWaveDataExcelByPortPointMapId(port_point_map_id)
+        if (result.length > 0) {
+            return res.send(new SuccessModel(utils.pageFilter(result, pageNum, pageSize), "根据港口点位地图查询excel成功"))
+        } else {
+            return res.send(new FailModel("根据港口点位地图查询excel失败"))
+        }
+    },
 }
 
 module.exports = waveDataExcelController

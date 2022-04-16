@@ -53,4 +53,12 @@ router.delete("/wavedataexcel/batch/delete", loginAuth, async (req, res) => {
     await waveDataExcelController.batchDeleteWaveDataExcel(req.body, res)
 })
 
+/**
+ * 获取港口点位统计结果excel
+ * /admin/wavedataexcel/search/by/portpointmapid
+ */
+router.get("/wavedataexcel/search/by/portpointmapid", loginAuth, async (req, res) => {
+    await waveDataExcelController.searchWaveDataExcelByPortPointMapId(req.query, res)
+})
+
 module.exports = router

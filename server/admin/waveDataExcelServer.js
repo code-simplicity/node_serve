@@ -91,6 +91,19 @@ const waveDataExcelServer = {
             },
         })
         return result
+    },
+
+    /**
+     * 根据港口点位图id查询
+     * @param {*} port_point_map_id 
+     */
+    async searchWaveDataExcelByPortPointMapId(port_point_map_id) {
+        const result = await waveDataExcelModel.findAll({
+            where: {
+                port_point_map_id
+            },
+        })
+        return result
     }
 }
 module.exports = waveDataExcelServer
