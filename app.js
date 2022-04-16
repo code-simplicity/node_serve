@@ -18,6 +18,7 @@ const portalPortPointMapRouter = require("./routes/portal/portpointmap");
 const portalPointMapRouter = require("./routes/portal/point");
 const portalWaveFormsRouter = require("./routes/portal/waveforms");
 const portalWaveStatsRouter = require("./routes/portal/wavestats");
+const portalWaveDataExcelRouter = require("./routes/portal/waveDataExcelRouter");
 
 // 管理员接口
 const adminUserRouter = require("./routes/admin/userRouter")
@@ -75,7 +76,7 @@ app.use("/", captchaRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
-  portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter
+  portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter, portalWaveDataExcelRouter
 );
 
 app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
