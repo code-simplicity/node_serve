@@ -7,9 +7,9 @@ const bimServer = {
      */
     async getBimFindAll() {
         const result = await BimModel.findAll({
-            where: {
-                order: ['create_time']
-            }
+            order: [
+                ["create_time"]
+            ]
         })
         return result
     }
