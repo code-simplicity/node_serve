@@ -5,9 +5,9 @@ const loginAuth = require("../../middleware/loginAuth");
 
 /**
  * 门户获取港口点位分析excel的信息
- * /portal/wavedataexcel/finOne/byportmappointid
+ * /portal/user/portal/wavedataexcel/finOne/byportmappointid
  */
-router.get('/wavedataexcel/finOne/byportmapid', loginAuth, async (req, res) => {
+router.get('/user/wavedataexcel/finOne/byportmapid', loginAuth, async (req, res) => {
     await waveDataExcelController.getWaveDataExcelByPortMapPointId(req.query, res)
 })
 

@@ -19,6 +19,7 @@ const portalPointMapRouter = require("./routes/portal/point");
 const portalWaveFormsRouter = require("./routes/portal/waveforms");
 const portalWaveStatsRouter = require("./routes/portal/wavestats");
 const portalWaveDataExcelRouter = require("./routes/portal/waveDataExcelRouter");
+const portalBimServer = require("./routes/portal/bimRouter");
 
 // 管理员接口
 const adminUserRouter = require("./routes/admin/userRouter")
@@ -32,6 +33,7 @@ const adminPointRouter = require("./routes/admin/pointRouter")
 const adminWaveFormsRouter = require("./routes/admin/waveFormsRouter")
 const adminWaveStatsRouter = require("./routes/admin/waveStatsRouter")
 const adminWaveDataExcelRouter = require("./routes/admin/waveDataExcelRouter")
+const adminBimRouter = require("./routes/admin/bimRouter")
 
 // 图灵验证码
 const captchaRouter = require("./routes/captcha");
@@ -76,12 +78,14 @@ app.use("/", captchaRouter);
 app.use("/test", testRouter);
 app.use("/portal", portalUserExRouter, portalUserRouter, portalContentRouter,
   portalPortMapRouter, portalVideoRouter, portalChooseRouter, portalPortPointMapRouter,
-  portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter, portalWaveDataExcelRouter
+  portalPointMapRouter, portalWaveFormsRouter, portalWaveStatsRouter, portalWaveDataExcelRouter,
+  portalBimServer
 );
 
 app.use("/admin", adminUserRouter, adminExcelRouter, adminChooseRouter,
   adminContentRouter, adminVideoRouter, adminPortMapRouter, adminPortPointMapRouter,
-  adminPointRouter, adminWaveFormsRouter, adminWaveStatsRouter, adminWaveDataExcelRouter
+  adminPointRouter, adminWaveFormsRouter, adminWaveStatsRouter, adminWaveDataExcelRouter,
+  adminBimRouter
 );
 
 app.use(function (req, res, next) {
