@@ -3,6 +3,8 @@ const {
     SuccessModel,
     FailModel
 } = require('../../response/response');
+const utils = require("../../utils/utils");
+
 const bimController = {
 
     /**
