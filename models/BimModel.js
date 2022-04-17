@@ -35,7 +35,7 @@ const BimModel = sequelizedb.define('tb_bim', {
     },
     state: {
         type: DataTypes.STRING(2),
-        defaultValue: "2",
+        defaultValue: "1",
         comment: "状态，0表示删除、1表示存在"
     },
     create_time: {

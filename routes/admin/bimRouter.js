@@ -1,5 +1,5 @@
 /**
- * 港口点位图波形数据excel
+ * 获取bim
  */
 const express = require("express");
 const router = express.Router();
