@@ -26,7 +26,6 @@ const BimModel = sequelizedb.define('tb_bim', {
     },
     type: {
         type: DataTypes.STRING,
-        defaultValue: "obj",
         comment: "bim类型"
     },
     name: {
