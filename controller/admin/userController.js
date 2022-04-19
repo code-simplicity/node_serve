@@ -267,7 +267,8 @@ const userController = {
             roles,
             stats,
             sex,
-            email
+            email,
+            score
         } = args
         if (utils.isEmpty(id)) {
             return res.status(resCode.UnprocessableEntity.code).send(new FailModel("学号不可以为空"))
@@ -283,7 +284,8 @@ const userController = {
             roles,
             stats,
             sex,
-            email
+            email,
+            score
         }
         const [result] = await userServer.updateUser(params)
         if (result) {
