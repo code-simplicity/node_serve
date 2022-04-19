@@ -1,4 +1,4 @@
-const waveDataExcelModel = require("../../models/waveDataExcelModel")
+const WaveDataExcelModel = require("../../models/WaveDataExcelModel")
 const waveDataExcelServer = {
 
     /**
@@ -7,7 +7,7 @@ const waveDataExcelServer = {
      * @returns 
      */
     async getWaveDataExcelByPortMapPointId(port_point_map_id) {
-        const result = await waveDataExcelModel.findOne({
+        const result = await WaveDataExcelModel.findOne({
             where: {
                 port_point_map_id,
             },
@@ -15,5 +15,4 @@ const waveDataExcelServer = {
         return result
     }
 }
-
 module.exports = waveDataExcelServer

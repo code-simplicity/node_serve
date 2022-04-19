@@ -1,4 +1,4 @@
-const waveDataExcelModel = require("../../models/waveDataExcelModel")
+const WaveDataExcelModel = require("../../models/WaveDataExcelModel")
 const {
     Op
 } = require("sequelize")
@@ -16,7 +16,7 @@ const waveDataExcelServer = {
             type,
             name
         } = args
-        const result = await waveDataExcelModel.create({
+        const result = await WaveDataExcelModel.create({
             port_point_map_id: port_point_map_id,
             url: `http://${url}`,
             path: path,
@@ -30,7 +30,7 @@ const waveDataExcelServer = {
      * 获取全部港口点位统计结果excel
      */
     async waveDataExcelFindAll() {
-        const result = await waveDataExcelModel.findAll({
+        const result = await WaveDataExcelModel.findAll({
             order: [
                 ["create_time"]
             ],
@@ -51,7 +51,7 @@ const waveDataExcelServer = {
             type,
             name
         } = args
-        const result = await waveDataExcelModel.update({
+        const result = await WaveDataExcelModel.update({
             port_point_map_id: port_point_map_id,
             url: `http://${url}`,
             path: path,
@@ -70,7 +70,7 @@ const waveDataExcelServer = {
      * @param {*} id 
      */
     async deleteWaveDataExcel(id) {
-        const result = await waveDataExcelModel.destroy({
+        const result = await WaveDataExcelModel.destroy({
             where: {
                 id,
             }
@@ -83,7 +83,7 @@ const waveDataExcelServer = {
      * @param {*} waveDataExcelIds 
      */
     async batchDeleteWaveDataExcel(waveDataExcelIds) {
-        const result = await waveDataExcelModel.destroy({
+        const result = await WaveDataExcelModel.destroy({
             where: {
                 id: {
                     [Op.in]: waveDataExcelIds,
@@ -98,7 +98,7 @@ const waveDataExcelServer = {
      * @param {*} port_point_map_id 
      */
     async searchWaveDataExcelByPortPointMapId(port_point_map_id) {
-        const result = await waveDataExcelModel.findAll({
+        const result = await WaveDataExcelModel.findAll({
             where: {
                 port_point_map_id
             },
