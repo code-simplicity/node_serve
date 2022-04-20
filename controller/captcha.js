@@ -25,8 +25,8 @@ const captcha = {
             size: 4,
             noise: 1,
             color: true,
-            background: '#DBDBDB',
-            height: 32,
+            background: '#A6A6A6',
+            height: 34,
             width: 100,
             fontSize: 36,
             ignoreChars: '0oO1ilI', // 验证码字符中排除 0o1i
