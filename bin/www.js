@@ -14,7 +14,12 @@ const http = require("http");
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || "5050");
+/**
+ * 加载环境配置
+ */
+const config = require('../config/config');
+
+const port = normalizePort(config.port || "5050");
 const host = normalizePort(process.env.HOST || "");
 app.set("port", port);
 app.set("host", host);

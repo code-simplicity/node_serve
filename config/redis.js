@@ -1,13 +1,13 @@
 // 连接数据库
-const config = require("./config");
+const config = require('./config');
 
 // 导入redis连接
 const redis = require("redis")
 
 // 创建redisClient
-const redisClient = redis.createClient(config.redisDB.port, config.redisDB.url)
+const redisClient = redis.createClient(config.redisDb.port, config.redisDb.url)
 //验证redis
-redisClient.auth(config.redisDB.password)
+redisClient.auth(config.redisDb.password)
 redisClient.on('ready', () => {
     console.log('redis ready success');
 })
