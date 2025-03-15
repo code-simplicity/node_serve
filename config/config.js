@@ -12,7 +12,7 @@ const {
   configProd
 } = require("./config-prod");
 
-const config = configProd;
+const config = configDev;
 const redisDB = redisConfig;
 
 // 暴露
