@@ -1,4 +1,4 @@
-version: '2.0'
+version: '3.0'
 services:
   node-serve:
     restart: always
@@ -6,3 +6,58 @@ services:
     container_name: node-serve
     ports:
       - 5050:5050
+    volumes:
+      - "${DATA_PATH:-./data}/node-serve:/app"
+    networks:
+      - app-network
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    container_name: "app-mysql"
+    image: "mysql:5.7.30"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_USER: 'root'
+      MYSQL_PASS: '123456'
+    ports:
+      - 3306:3306
+    volumes:
+      - "${DATA_PATH:-./data}/mysql/db:/var/lib/mysql"
+      - "${DATA_PATH:-./data}/mysql/conf:/etc/mysql"
+      - "${DATA_PATH:-./data}/mysql/log:/var/log/mysql"
+    networks:
+      - app-network
+
+  redis:
+    container_name: "app-redis"
+    image: "redis:latest"
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - "${DATA_PATH:-./data}/redis/data:/data"
+    networks:
+      - app-network
+
+  nginx:
+    container_name: "app-nginx"
+    image: "nginx:1.20"
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "${DATA_PATH:-./data}/nginx/conf:/etc/nginx/conf.d"
+      - "${DATA_PATH:-./data}/nginx/html:/usr/share/nginx/html"
+      - "${DATA_PATH:-./data}/nginx/logs:/var/log/nginx"
+    networks:
+      - app-network
+    depends_on:
+      - node-serve
+
+networks:
+  app-network:
+    driver: bridge

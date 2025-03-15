@@ -12,9 +12,25 @@ MySQL - 5.7.30 : Database - design_project
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`design_project` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`design_project` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
 USE `design_project`;
+
+/*Table structure for table `tb_bim` */
+
+DROP TABLE IF EXISTS `tb_bim`;
+
+CREATE TABLE `tb_bim` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'id',
+  `url` varchar(1024) DEFAULT NULL COMMENT 'bim路径',
+  `path` varchar(1024) DEFAULT NULL COMMENT 'bim存储路径',
+  `type` varchar(255) DEFAULT NULL COMMENT 'bim类型',
+  `name` varchar(255) DEFAULT NULL COMMENT 'bim名称',
+  `state` varchar(2) DEFAULT '1' COMMENT '状态，0表示删除、1表示存在',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Table structure for table `tb_choose` */
 
@@ -151,6 +167,25 @@ CREATE TABLE `tb_video` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
+
+/*Table structure for table `tb_wave_data_excel` */
+
+DROP TABLE IF EXISTS `tb_wave_data_excel`;
+
+CREATE TABLE `tb_wave_data_excel` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'id',
+  `url` varchar(1024) DEFAULT NULL COMMENT 'excel路径',
+  `path` varchar(1024) DEFAULT NULL COMMENT 'excel存储路径',
+  `type` varchar(255) DEFAULT 'excel/xlsx' COMMENT 'excel类型',
+  `name` varchar(255) DEFAULT NULL COMMENT 'excel名称',
+  `state` varchar(2) DEFAULT '1' COMMENT '状态，0表示删除、1表示存在',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `port_point_map_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `port_point_map_id` (`port_point_map_id`),
+  CONSTRAINT `tb_wave_data_excel_ibfk_1` FOREIGN KEY (`port_point_map_id`) REFERENCES `tb_port_point_map` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Table structure for table `tb_wave_forms` */
 

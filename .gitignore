@@ -5,3 +5,6 @@ yarn.lock
 yarn-error.log
 package-lock.json
 /logs
+.idea
+.vscode/*
+.data
