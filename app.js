@@ -13,39 +13,7 @@ const rateLimit = require('express-rate-limit');
 const sanitizeHtml = require('sanitize-html'); // 替换xss-clean
 const hpp = require('hpp');
 const cors = require('cors');
-
-// 门户接口
-const portalUserRouter = require('./routes/portal/user');
-const portalUserExRouter = require('./routes/portal/userEx');
-const portalContentRouter = require('./routes/portal/content');
-const portalPortMapRouter = require('./routes/portal/portmap');
-const portalVideoRouter = require('./routes/portal/video');
-const portalChooseRouter = require('./routes/portal/choose');
-const portalPortPointMapRouter = require('./routes/portal/portpointmap');
-const portalPointMapRouter = require('./routes/portal/point');
-const portalWaveFormsRouter = require('./routes/portal/waveforms');
-const portalWaveStatsRouter = require('./routes/portal/wavestats');
-const portalWaveDataExcelRouter = require('./routes/portal/waveDataExcelRouter');
-const portalBimServer = require('./routes/portal/bimRouter');
-
-// 管理员接口
-const adminUserRouter = require('./routes/admin/userRouter');
-const adminExcelRouter = require('./routes/admin/excelRouter');
-const adminChooseRouter = require('./routes/admin/chooseRouter');
-const adminContentRouter = require('./routes/admin/contentRouter');
-const adminVideoRouter = require('./routes/admin/videoRouter');
-const adminPortMapRouter = require('./routes/admin/portMapRouter');
-const adminPortPointMapRouter = require('./routes/admin/portPointMapRouter');
-const adminPointRouter = require('./routes/admin/pointRouter');
-const adminWaveFormsRouter = require('./routes/admin/waveFormsRouter');
-const adminWaveStatsRouter = require('./routes/admin/waveStatsRouter');
-const adminWaveDataExcelRouter = require('./routes/admin/waveDataExcelRouter');
-const adminBimRouter = require('./routes/admin/bimRouter');
-
-// 图灵验证码
-const captchaRouter = require('./routes/captcha');
-// 添加测试功能代码
-const testRouter = require('./routes/test/code');
+const compression = require('compression');
 const config = require('./config/config');
 
 // view engine setup
@@ -130,19 +98,13 @@ app.use(
 	})
 );
 
-// 环境感知的错误处理
-// app.use((err, req, res, next) => {
-// 	const errorDetails = config.env === 'development' ? err.stack : {};
+// 日志中间件
+if (config.env === 'development') {
+	app.use(logger('dev'));
+} else {
+	app.use(logger('combined'));
+}
 
-// 	res.status(err.status || 500).json({
-// 		error: {
-// 			message: err.message,
-// 			...(config.env === 'development' ? { stack: err.stack } : {}),
-// 		},
-// 	});
-// });
-
-app.use(logger('dev'));
 app.use(express.json());
 app.use(
 	express.urlencoded({
@@ -151,46 +113,24 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// 加载路由
-app.use('/', captchaRouter);
-app.use('/test', testRouter);
 app.use(
-	'/portal',
-	portalUserExRouter,
-	portalUserRouter,
-	portalContentRouter,
-	portalPortMapRouter,
-	portalVideoRouter,
-	portalChooseRouter,
-	portalPortPointMapRouter,
-	portalPointMapRouter,
-	portalWaveFormsRouter,
-	portalWaveStatsRouter,
-	portalWaveDataExcelRouter,
-	portalBimServer
+	bodyParser.urlencoded({
+		extended: true,
+	})
 );
+app.use(bodyParser.json());
+// 参数污染
+app.use(hpp());
+app.use(methodOverride());
+// 压缩响应
+app.use(compression());
 
-app.use(
-	'/admin',
-	adminUserRouter,
-	adminExcelRouter,
-	adminChooseRouter,
-	adminContentRouter,
-	adminVideoRouter,
-	adminPortMapRouter,
-	adminPortPointMapRouter,
-	adminPointRouter,
-	adminWaveFormsRouter,
-	adminWaveStatsRouter,
-	adminWaveDataExcelRouter,
-	adminBimRouter
-);
+// 注册路由
+require('./config/routes')(app);
 
 app.use(function (req, res, next) {
 	next(createError(404));
 });
-
 function logErrors(err, req, res, next) {
 	console.error(err.stack);
 	next(err);
@@ -207,30 +147,25 @@ function clientErrorHandler(err, req, res, next) {
 }
 
 function errorHandler(err, req, res, next) {
-	res.status(500);
-	res.render('error', {
-		error: err,
-	});
+	// 记录错误
+	console.error(err);
+	// 根据环境返回适当的错误信息
+	const errorDetails =
+		NODE_ENV === 'development'
+			? { message: err.message, stack: err.stack }
+			: { message: 'Internal Server Error' };
+	es.status(500).json({ error: errorDetails });
 }
-
-app.use(
-	bodyParser.urlencoded({
-		extended: true,
-	})
-);
-app.use(bodyParser.json());
-// 参数污染
-app.use(hpp())
-app.use(methodOverride());
+// 添加请求超时中间件
+app.use((req, res, next) => {
+  res.setTimeout(config.TIMEOUT, () => {
+    res.status(408).send('请求超时');
+  });
+  next();
+});
 app.use(logErrors);
 app.use(clientErrorHandler);
 app.use(errorHandler);
 
-// 错误处理
-app.use((err, req, res, next) => {
-	res.locals.message = err.message;
-	res.locals.error = req.app.get('env') === 'development' ? err : {};
-	res.status(err.status || 500).send('Something broke!');
-});
 
 module.exports = app;

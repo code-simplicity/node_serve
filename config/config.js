@@ -14,6 +14,7 @@ dotenv.config({ path: path.join(__dirname, '..', envFile) });
 const config = {
 	env: process.env.NODE_ENV || 'development',
 	port: process.env.PORT || 3000,
+  TIMEOUT: process.env.TIMEOUT || 60 * 1000,
 
 	// 数据库配置
 	mysqlDb: {
@@ -27,6 +28,7 @@ const config = {
 	// 数据库配置
 	api: {
 		prefix: '/api',
+    version: 'v1'
 	},
 
 	// CORS配置
