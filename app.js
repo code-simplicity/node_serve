@@ -219,6 +219,8 @@ app.use(
 	})
 );
 app.use(bodyParser.json());
+// 参数污染
+app.use(hpp())
 app.use(methodOverride());
 app.use(logErrors);
 app.use(clientErrorHandler);
