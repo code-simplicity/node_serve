@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
 const config = {
 	env: process.env.NODE_ENV || 'development',
-	port: process.env.PORT || 3000,
+	port: process.env.PORT || 5050,
   TIMEOUT: process.env.TIMEOUT || 60 * 1000,
 
 	// 数据库配置

@@ -151,10 +151,10 @@ function errorHandler(err, req, res, next) {
 	console.error(err);
 	// 根据环境返回适当的错误信息
 	const errorDetails =
-		NODE_ENV === 'development'
+  process.env.NODE_ENV === 'development'
 			? { message: err.message, stack: err.stack }
 			: { message: 'Internal Server Error' };
-	es.status(500).json({ error: errorDetails });
+      res.status(500).json({ error: errorDetails });
 }
 // 添加请求超时中间件
 app.use((req, res, next) => {
