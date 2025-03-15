@@ -25,6 +25,7 @@
     "express-jwt": "^6.1.0",
     "express-session": "^1.17.2",
     "fluent-ffmpeg": "^2.1.2",
+    "helmet": "^8.0.0",
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "js-md5": "^0.7.3",

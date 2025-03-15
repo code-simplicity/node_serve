@@ -1,0 +1,12 @@
+{
+	"verbose": true,
+	"ignore": ["node_modules/*", ".git/*", "public/*", "*.test.js"],
+	"execMap": {
+		"js": "node --inspect"
+	},
+	"env": {
+		"NODE_ENV": "development"
+	},
+	"ext": "js,json",
+    "delay": 2500
+}

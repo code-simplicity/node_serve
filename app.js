@@ -6,6 +6,7 @@ const logger = require("morgan");
 const bodyParser = require('body-parser')
 const methodOverride = require('method-override')
 const app = express();
+const helmet = require('helmet');
 
 // 门户接口
 const portalUserRouter = require("./routes/portal/user");
@@ -114,6 +115,7 @@ function errorHandler(err, req, res, next) {
   })
 }
 
+app.use(helmet());
 app.use(bodyParser.urlencoded({
   extended: true
 }))
