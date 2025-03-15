@@ -1,0 +1,15 @@
+FROM node:16
+
+ENV NODE_ENV=production
+
+WORKDIR /nodeServe
+
+COPY . .
+
+RUN npm install
+
+
+EXPOSE 5050
+
+CMD ["npm", "run", "prod:pm2"]
+

@@ -4,7 +4,7 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     # image: node-serve-1.0
     container_name: node-serve
     ports:

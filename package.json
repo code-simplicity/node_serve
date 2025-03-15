@@ -5,7 +5,8 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development node ./bin/www",
     "dev": "cross-env NODE_ENV=development nodemon ./bin/www",
-    "pm2": "cross-env NODE_ENV=production pm2 start processes.json",
+    "dev:pm2": "cross-env NODE_ENV=development pm2 start processes.json",
+    "prod:pm2": "cross-env NODE_ENV=production pm2 start processes.json",
     "apidoc": "apidoc -i routes/ -o public/apidoc"
   },
   "dependencies": {
