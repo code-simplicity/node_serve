@@ -22,8 +22,6 @@ if [ -f ./config/nginx.conf ]; then
   echo "复制后的文件内容："
   cat "${DATA_PATH}/nginx/conf/nginx.conf"
 
-  # 使用 dos2unix 转换文件换行符
-  dos2unix "${DATA_PATH}/nginx/conf/nginx.conf"
 else
   echo "nginx.conf 文件不存在，无法复制。"
   exit 1
