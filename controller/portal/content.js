@@ -33,7 +33,7 @@ const content = {
         } = args
         const {
             dataValues
-        } = await contentServer.getContentByChooseId(choose_id)
+        } = await contentServer.getContentByChooseId(choose_id) || {}
         if (dataValues !== null) {
             return res.send(new SuccessModel(dataValues, "内容获取成功"))
         } else {

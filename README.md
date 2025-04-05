@@ -5,7 +5,7 @@
 首先拉取代码
 
 ```shell
-git clone https://github.com.cnpmjs.org/dpy0912/node_serve.git
+git clone https://github.com/code-simplicity/node_serve.git
 ```
 
 使用VsCode打开项目，之后更新依赖包，然后相关下载依赖
