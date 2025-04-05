@@ -30,4 +30,4 @@ else
 fi
 
 # 构建并启动生产环境
-docker-compose -f docker-compose-prod.yml up -d
+docker compose -f docker-compose-prod.yml up -d
