@@ -4,7 +4,7 @@ export NODE_ENV=development
 export DATA_PATH=../data
 
 # 为整个文件夹添加操作权限
-chmod -R 755 .
+chmod -R 777 .
 
 # 创建必要的目录
 mkdir -p "${DATA_PATH}/nginx/conf"

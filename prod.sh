@@ -5,7 +5,7 @@ export NODE_ENV=production
 export DATA_PATH=../data
 
 # 为 nginx 目录设置适当的权限
-chmod -R 755 .
+chmod -R 777 .
 
 # 创建必要的目录
 mkdir -p "${DATA_PATH}/nginx/conf"
