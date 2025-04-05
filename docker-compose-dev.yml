@@ -1,21 +1,21 @@
 version: '3.0'
 services:
-  node-serve:
-    restart: always
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    # image: node-serve-1.0
-    container_name: node-serve
-    ports:
-      - 5050:5050
-    volumes:
-      - "${DATA_PATH:-./data}/node-serve:/app"
-    networks:
-      - app-network
-    depends_on:
-      - mysql
-      - redis
+#  node-serve:
+#    restart: always
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.dev
+#    # image: node-serve-1.0
+#    container_name: node-serve
+#    ports:
+#      - 5050:5050
+#    volumes:
+#      - "${DATA_PATH:-./data}/node-serve:/app"
+#    networks:
+#      - app-network
+#    depends_on:
+#      - mysql
+#      - redis
 
   mysql:
     container_name: "app-mysql"

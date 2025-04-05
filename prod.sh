@@ -2,7 +2,7 @@
 
 export NODE_ENV=production
 # 后续这个地址需要变成服务的地址
-export DATA_PATH=./data
+export DATA_PATH=../data
 
 # 为整个文件夹添加操作权限
 chmod -R 755 .

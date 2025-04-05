@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export NODE_ENV=development
-export DATA_PATH=./data
+export DATA_PATH=../data
 
 # 为整个文件夹添加操作权限
 chmod -R 755 .
