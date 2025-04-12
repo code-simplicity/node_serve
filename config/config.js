@@ -10,7 +10,6 @@ const envFile =
 
 dotenv.config({ path: path.join(__dirname, '..', envFile) });
 
-
 const config = {
 	env: process.env.NODE_ENV || 'development',
 	port: process.env.PORT || 5050,

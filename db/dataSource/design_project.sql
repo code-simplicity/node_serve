@@ -1926,6 +1926,7 @@ INSERT INTO `tb_user` VALUES ('2007025', '蒋学炼', 'U2FsdGVkX1/3TMSuz8APgN3kH
 INSERT INTO `tb_user` VALUES ('2012006', '宋吉宁', 'U2FsdGVkX19DzmmIlkUUVvKoSpy2Em13oRSy+g/MsgBujHCBYlXfUiKmn0PCIakYGKQI8YioVLE=', 'user', '1', '60', '2022-04-13 07:59:37', '2022-04-13 07:59:37', '男', NULL);
 INSERT INTO `tb_user` VALUES ('2013003', '张娜', 'U2FsdGVkX18r25ClC9g48503PyCFQmV1diTbt/iunILEy2bmMRe0+9CFFfUmHDsiz7Ftn1IqlX0=', 'user', '1', '20', '2022-04-13 07:58:27', '2022-04-13 07:58:27', '女', NULL);
 INSERT INTO `tb_user` VALUES ('2019019', '杨伟超', 'U2FsdGVkX1/4Xm46uDPoYpQXt7WDjPgUQabxX9mHl3LlaPBPmA9g3tPq3NcodxMO98/LasuV+Lk=', 'user', '1', '20', '2022-04-13 08:00:56', '2022-04-13 08:00:56', '男', NULL);
+INSERT INTO `tb_user` VALUES ('1807010210', '杜培义', 'U2FsdGVkX1/3TMSuz8APgN3kHyWGgh8f+oUmnLHvvp85OrEHEMVZOCS7QCn36VufPVmlqCCvrn4=', 'admin', '1', '0', '2022-04-13 08:00:56', '2022-04-13 08:00:56', '男', '468264345@qq.com');
 
 -- ----------------------------
 -- Table structure for tb_video
