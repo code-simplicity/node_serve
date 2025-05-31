@@ -30,11 +30,8 @@ const loginAuth = require("../../middleware/loginAuth");
  */
 router.post("/user/add", async (req, res) => {
     // 用户名，密码，学号，性别，邮箱地址，图灵验证码
-    const result = await userController.register(req.body, req, res)
-    if (!result) {
-        return res.send(new FailModel("注册失败"))
-    }
-    return res.send(new SuccessModel("注册成功"))
+    await userController.register(req.body, req, res)
+    // 注意：响应已经在controller中处理，此处不需要再发送响应
 });
 
 /**

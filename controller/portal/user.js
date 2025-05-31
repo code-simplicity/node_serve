@@ -32,20 +32,24 @@ const user = {
             const user = await userServer.getUserInfo(id)
             if (user !== null) {
                 // 存在那么就返回该用户已经存在
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("用户已存在"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("用户已存在"))
+                return false
             }
             const emailInfo = await userServer.checkEmail(email)
             // 邮箱已经存在
             if (emailInfo !== null) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱已存在"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱已存在"))
+                return false
             }
             // 检验邮箱验证码
             const emailVerifyCode = await redis.getString(Constants.User.EMAIL_CODE + email)
             if (utils.isEmpty(emailVerifyCode)) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱验证码已过期"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱验证码已过期"))
+                return false
             }
             if (emailVerifyCode !== emailCode) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱验证码不正确"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("邮箱验证码不正确"))
+                return false
             } else {
                 // 删除redis中的邮箱验证码
                 redis.delString(Constants.User.EMAIL_CODE + email)
@@ -55,17 +59,20 @@ const user = {
             // 通过key读取redis中的相关验证码
             const captchaValue = await redis.getString(Constants.User.CAPTCHA_CONTENT + captchaKey)
             if (utils.isEmpty(captchaValue)) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("图灵验证码已经过期"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("图灵验证码已经过期"))
+                return false
             }
             if (captcha !== captchaValue) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("图灵验证码不正确"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("图灵验证码不正确"))
+                return false
             } else {
                 // 验证成功之后，删除redis的验证码
                 redis.delString(Constants.User.CAPTCHA_CONTENT + captchaKey)
             }
             // 判断密码是否通过crypto进行摘要计算，32位
             if (password.length !== 32) {
-                return res.status(resCode.UnprocessableEntity.code).send(new FailModel("请使用MD5进行摘要计算"))
+                res.status(resCode.UnprocessableEntity.code).send(new FailModel("请使用MD5进行摘要计算"))
+                return false
             }
             // 对密码进行加密入库
             password = utils.desEncrypt(password, Constants.User.PASSWORD_MESSAGE)
@@ -80,12 +87,15 @@ const user = {
                 dataValues
             } = await userServer.register(params)
             if (dataValues !== null) {
-                return res.send(new SuccessModel("注册成功"))
+                res.send(new SuccessModel("注册成功"))
+                return true
             } else {
-                return res.send(new FailModel("注册失败"))
+                res.send(new FailModel("注册失败"))
+                return false
             }
         } catch (error) {
-            return res.send(new FailModel("注册失败"))
+            res.send(new FailModel("注册失败"))
+            return false
         }
     },
 
